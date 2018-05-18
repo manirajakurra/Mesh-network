@@ -72,7 +72,7 @@ static void MX_SPI2_Init(void);
 
 /* USER CODE BEGIN 0 */
 uint8_t txData[2];
-
+uint8_t rxData[2];
 /* USER CODE END 0 */
 
 int main(void)
@@ -108,12 +108,16 @@ int main(void)
   /* USER CODE BEGIN 2 */
   my_init();
   /* USER CODE END 2 */
-  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_SET); // Set CSN
+  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_1,GPIO_PIN_RESET);
+  
   HAL_Delay(10);
-  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_RESET);
-  txData[0] = 0x05;
-  HAL_SPI_Transmit(&hspi2,txData,1,10);
-  HAL_SPI_Receive(&hspi2,&txData[1],1,10);
+  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_RESET);// Reseting CSN 
+  txData[0] = 0x05; 
+  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_1,GPIO_PIN_SET);
+  HAL_SPI_Transmit(&hspi2,txData,1,10); // Transmit Data
+  //HAL_SPI_TransmitReceive(&hspi2,txData,rxData,1,5000);
+ HAL_SPI_Receive(&hspi2,&txData[1],1,10); // Receive Data
 
   HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_SET);
  //  HAL_SPI_Receive(&hspi2,rxData,10,10);
@@ -291,7 +295,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|GPIO_PIN_1|LD2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -299,8 +303,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA0 LD2_Pin */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|LD2_Pin;
+  /*Configure GPIO pins : PA0 PA1 LD2_Pin */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|LD2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

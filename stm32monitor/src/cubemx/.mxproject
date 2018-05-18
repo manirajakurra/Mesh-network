@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=/home/maniraja/capstone/stm32monitor/src/cubemx/Inc
+HeaderPath=/home/maniraja/capstone/Spi_test/stm32monitor/src/cubemx/Inc
 HeaderFiles=stm32f3xx_it.h;stm32f3xx_hal_conf.h;main.h;
-SourcePath=/home/maniraja/capstone/stm32monitor/src/cubemx/Src
+SourcePath=/home/maniraja/capstone/Spi_test/stm32monitor/src/cubemx/Src
 SourceFiles=stm32f3xx_it.h;stm32f3xx_hal_conf.h;main.h;stm32f3xx_it.c;stm32f3xx_hal_msp.c;main.c;
 
 [PreviousLibFiles]
