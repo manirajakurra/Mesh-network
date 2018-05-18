@@ -71,8 +71,6 @@ static void MX_SPI2_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
-uint8_t txData[2];
-uint8_t rxData[2];
 /* USER CODE END 0 */
 
 int main(void)
@@ -108,20 +106,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   my_init();
   /* USER CODE END 2 */
-  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_SET); // Set CSN
-  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_1,GPIO_PIN_RESET);
-  
-  HAL_Delay(10);
-  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_RESET);// Reseting CSN 
-  txData[0] = 0x05; 
-  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_1,GPIO_PIN_SET);
-  HAL_SPI_Transmit(&hspi2,txData,1,10); // Transmit Data
-  //HAL_SPI_TransmitReceive(&hspi2,txData,rxData,1,5000);
- HAL_SPI_Receive(&hspi2,&txData[1],1,10); // Receive Data
-
-  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_SET);
- //  HAL_SPI_Receive(&hspi2,rxData,10,10);
-   HAL_Delay(10);
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -131,7 +115,7 @@ int main(void)
 
   /* USER CODE BEGIN 3 */
     my_main();
-   printf("the value is %d \n",txData[1]);
+ 
   }
   /* USER CODE END 3 */
 
