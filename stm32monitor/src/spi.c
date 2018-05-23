@@ -5,20 +5,14 @@
 
 
 /* Private variables ---------------------------------------------------------*/
-SPI_HandleTypeDef hspi2;
-
-
-/* Private function prototypes -----------------------------------------------*/
-
-static void MX_GPIO_Init(void);
-static void MX_SPI2_Init(void);
-
+extern SPI_HandleTypeDef hspi2;
 
 uint8_t txData[2];
 uint8_t rxData[2];
+uint8_t tt[2];
 
 
-static void MX_SPI2_Init(void)
+void MX_SPI2_Init(void)
 {
 
   hspi2.Instance = SPI2;
@@ -42,7 +36,7 @@ static void MX_SPI2_Init(void)
 
 }
 
-static void MX_GPIO_Init(void)
+void MX_GPIO_Init(void)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct;
@@ -71,41 +65,100 @@ static void MX_GPIO_Init(void)
 
 }
 
-ParserReturnVal_t spiDataTransfer(int mode) 
+void SPIGPIO_init()
+{
+
+  GPIO_InitTypeDef GPIO_InitStruct;
+
+ 
+    /* Peripheral clock enable */
+    __HAL_RCC_SPI2_CLK_ENABLE();
+  
+    /**SPI2 GPIO Configuration    
+    PB13     ------> SPI2_SCK
+    PB14     ------> SPI2_MISO
+    PB15     ------> SPI2_MOSI 
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN SPI2_MspInit 1 */
+
+  /* USER CODE END SPI2_MspInit 1 */
+
+
+}
+
+
+ParserReturnVal_t SPI_int(int mode) 
 { 
 
 
   if(mode != CMD_INTERACTIVE) return CmdReturnOk;
   MX_GPIO_Init();
+  SPIGPIO_init();
   MX_SPI2_Init();
   
+
+
+
+  
+  
+  return CmdReturnOk;
+
+} 
+
+ADD_CMD("SPI_int", SPI_int, "SPI2 intialization")
+
+ParserReturnVal_t SPI_DataTransfer(int mode) 
+{ 
+
+
+  if(mode != CMD_INTERACTIVE) return CmdReturnOk;
+
+  int tempData = 0;
   HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_SET); // Set CSN
   HAL_GPIO_WritePin(GPIOA,GPIO_PIN_1,GPIO_PIN_RESET); // Reset CE
   
   HAL_Delay(10);
   HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_RESET);// Reseting CSN 
 
-  txData[0] = 0x05;
-
+  txData[0] = 0xA0;
+  //tt[0] = 12;
   HAL_GPIO_WritePin(GPIOA,GPIO_PIN_1,GPIO_PIN_SET); // Set CE
 
-  HAL_SPI_Transmit(&hspi2,txData,1,10); // Transmit Data
+  //HAL_SPI_Transmit(&hspi2,txData,1,10); // Transmit Data
+  
+  //HAL_SPI_Transmit(&hspi2,tt,1,10); // Transmit Data
+  HAL_SPI_TransmitReceive(&hspi2,txData,rxData,1,5000);
+  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_SET); // Set CSN
 
-  //HAL_SPI_TransmitReceive(&hspi2,txData,rxData,1,5000);
+  HAL_Delay(10);
+  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_1,GPIO_PIN_SET); // Set CE
+   HAL_Delay(10);
 
-  HAL_SPI_Receive(&hspi2,&txData[1],1,10); // Receive Data
-
+  HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_RESET);// Reseting CSN 
+  //txData[0] = 0x61;
+  //HAL_SPI_Receive(&hspi2,txData,1,10); // Receive Data
+  //HAL_SPI_Receive(&hspi2,rxData,1,10); // Receive Data
+  tempData = (int)rxData[0];
   HAL_GPIO_WritePin(GPIOA,GPIO_PIN_0,GPIO_PIN_SET);
  //  HAL_SPI_Receive(&hspi2,rxData,10,10);
    HAL_Delay(10);
+  //printf("sent value is %d \n",txData);
+  printf(" The received value is %d \n",txData[0]);
+  printf("The received value is %d \n", tempData);
+
   
   return CmdReturnOk;
 
 } 
 
-ADD_CMD("SPI_Transfer", spiDataTransfer, "SPI DATA Transfer")
-
-
+ADD_CMD("SPI_Transfer", SPI_DataTransfer, "SPI DATA Transfer")
 
 
 

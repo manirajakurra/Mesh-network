@@ -60,7 +60,6 @@ SRCS   += $(HAL_SRC)/stm32f3xx_hal_rcc.c \
 	  $(HAL_SRC)/stm32f3xx_hal_pwr_ex.c \
 	  $(HAL_SRC)/stm32f3xx_hal_spi_ex.c \
 	  $(HAL_SRC)/stm32f3xx_hal_spi.c
-
 PREFIX	=	arm-none-eabi-
 CC=$(PREFIX)gcc
 AR=$(PREFIX)ar

@@ -50,8 +50,13 @@ const parse_table f##E __attribute__ ((section(".parsetable." name))) = { \
     .func    = f, \
     .help    = helptxt };
 
+void SPIGPIO_init(void);
+void MX_GPIO_Init(void);
+void MX_SPI2_Init(void);
+
 void TaskInputInit(void);
 void TaskInput(void *data);
+
 ParserReturnVal_t parse(char *buf, int len,
 			const parse_table *table);  /* Parse the
 						       buffer and call
@@ -131,7 +136,7 @@ void PolledPrintf(const char * restrict fmt, ...);
 /* version info functions */
 void VersionPrint(void);
 extern const time_t VersionBuildDate;
-
+SPI_HandleTypeDef hspi2;
 /*
  * Watchdog timer functions
  */
