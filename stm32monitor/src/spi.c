@@ -7,8 +7,8 @@
 /* Private variables ---------------------------------------------------------*/
 extern SPI_HandleTypeDef hspi2;
 
-uint8_t txData[2];
-uint8_t rxData[2];
+uint8_t txData[2]; // transfer data
+uint8_t rxData[2]; // received data
 uint8_t tt[2];
 
 
@@ -102,7 +102,7 @@ ParserReturnVal_t SPI_int(int mode)
   MX_GPIO_Init();
   SPIGPIO_init();
   MX_SPI2_Init();
-  
+  __HAL_SPI_ENABLE(&hspi2);
 
 
 
