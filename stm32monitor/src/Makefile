@@ -4,7 +4,7 @@
 
 # C source files for the project
 PROJ_NAME = simple_monitor
-SRCS  = my_main.c mycode.s mytest.c spi.c
+SRCS  = my_main.c mycode.s mytest.c spi.c tasks.c
 BUILD = build
 
 
@@ -57,9 +57,10 @@ SRCS   += $(HAL_SRC)/stm32f3xx_hal_rcc.c \
 	  $(HAL_SRC)/stm32f3xx_hal_rtc.c \
 	  $(HAL_SRC)/stm32f3xx_hal_rtc_ex.c \
 	  $(HAL_SRC)/stm32f3xx_hal_pwr.c \
-	  $(HAL_SRC)/stm32f3xx_hal_pwr_ex.c \
-	  $(HAL_SRC)/stm32f3xx_hal_spi_ex.c \
-	  $(HAL_SRC)/stm32f3xx_hal_spi.c
+	  $(HAL_SRC)/stm32f3xx_hal_pwr_ex.c\
+          $(HAL_SRC)/stm32f3xx_hal_spi.c\
+          $(HAL_SRC)/stm32f3xx_hal_spi_ex.c
+
 PREFIX	=	arm-none-eabi-
 CC=$(PREFIX)gcc
 AR=$(PREFIX)ar
