@@ -7,28 +7,10 @@ uint8_t RxMode()
 {
   uint8_t spiCmd = 0;
   uint8_t spiData = 0;
-  //uint8_t i = 0;
-  
-/*
-  GPIO_Init();
-  spi_init();
-  //configuration of nRF24L01
-  config_nrf24l01(Rx);
-  printf("Configuration done\n\r");
-  SET_CE;
-*/
-  //HAL_Delay(1);
-/*  while(sFlag)
-  {
-  //printf("Rxd Flag is%d\n\r", sFlag);
-  sFlag = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
-  }
-*/
-  //printf("Rxd Flag is%d\n\r", sFlag);
+
   spiCmd = _NRF24L01P_SPI_CMD_RD_RX_PAYLOAD;
   spiData = 0;
   spiData = receive_data_from_spi(spiCmd, spiData);
- // printf("payload is %d\n\r", spiData);
 
   return(spiData);
 }
@@ -38,7 +20,7 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
 {
   uint8_t spiCmd = 0;
   uint8_t spiData = 0;
- uint8_t txData[PAYLOAD_LEN] = {16};//{11,12,13,14,15,16,17,18};
+ uint8_t txData[PAYLOAD_LEN] = {11,12,13,14,15,16,17,18};
   uint8_t i = 0;
   
 
@@ -69,8 +51,8 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
   spiCmd = _NRF24L01P_SPI_CMD_WR_REG |_NRF24L01P_REG_STATUS;
   spiData = 46; //'01001110'
   send_data_to_spi(spiCmd, spiData);
-sFlag =0;
-config_nrf24l01(Rx);
+  sFlag =0;
+  config_nrf24l01(Rx);
 //  }
 
   return CmdReturnOk;

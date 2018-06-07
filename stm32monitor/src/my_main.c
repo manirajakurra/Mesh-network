@@ -87,11 +87,11 @@ void clearFlags()
 void my_main(void)
 {
   //extern uint8_t sFlag;
-  uint8_t rxData = 0;
+  uint8_t rxData[PAYLOAD_LEN] = {0};
   uint8_t fifoStatus = 0;
   //uint8_t Rx_FIFO_EMPTY_Mask = 0x01;
 
- 
+  uint8_t i = 0;
   uint8_t spiCmd = 0;
   uint8_t spiData = 0;
 
@@ -109,18 +109,17 @@ sFlag = 0;
   spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_STATUS;
   spiData = 0; //'01001110'
   fifoStatus = (((receive_data_from_spi(spiCmd, spiData) & RX_DR_MASK) == 0x40)? 0 : 1);
-  //fifoStatus = receive_data_from_spi(spiCmd, spiData) & RX_DR_MASK;
-  //printf("-----FIFO STATUS---- %d\n\r", fifoStatus);
   if(!fifoStatus)
  {
   RESET_CE;
-  rxData = RxMode();
-  printf("-----RxData -----\n\r%d\n\r", rxData);
+  receive_payload_from_spi(rxData, PAYLOAD_LEN);
+  printf("-----RxData -----\n\r\n\r");
+  for(i = 0; i < PAYLOAD_LEN; i++)
+    printf("%d\n\r", rxData[i]);
  }
  fifoStatus = 1;
 
  clearFlags();
- 
  SET_CE;
  }
   WDTFeed();
