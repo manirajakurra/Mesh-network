@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <ctype.h>
 #include <string.h>
-
+#include "nrf24l01_lib.h"
 #include "common.h"
 
 /* This include will give us the CubeMX generated defines */
@@ -22,19 +22,134 @@ void my_init(void)
   
   /* Initialize the task system */
   TaskingInit();
-
+  GPIO_Init();
+  spi_init();
+  //configuration of nRF24L01
+  config_nrf24l01(Rx);
+  printf("Configuration done\n\r");
+  SET_CE;
+  HAL_Delay(1);
   my_Init();
 
 }
+
+uint8_t sFlag = 0;
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  //extern uint8_t sFlag;
+
+  if (GPIO_Pin == GPIO_PIN_4)
+  {
+    /* place what you want to have happen when an interrupt has been
+     * generated on pin 9 here. Just remember a best practice is to
+     * keep the work you do in an isr Callback short
+     */
+	  //HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_3);
+          printf("Rxd Interrupt\n\r");
+          sFlag = 1;
+  }
+}
+
+void clearFlags()
+{
+  uint8_t spiCmd = 0;
+  uint8_t spiData = 0;
+//STATUS Register
+  // clear the RX_DR bit
+  spiCmd = _NRF24L01P_SPI_CMD_WR_REG |_NRF24L01P_REG_STATUS;
+  spiData = 126; //'01001110'
+  send_data_to_spi(spiCmd, spiData);
+
+//printf("Register --- FLUSH_TX\n\r");
+  //FLUSH_TX
+  spiCmd = _NRF24L01P_SPI_CMD_FLUSH_TX;
+  spiData = 0; //'00000000'
+  send_data_to_spi(spiCmd, spiData);
+
+  //FLUSH_RX
+  spiCmd = _NRF24L01P_SPI_CMD_FLUSH_RX;
+  spiData = 0; //'00000000'
+  send_data_to_spi(spiCmd, spiData);
+/*
+  //FIFO_STATUS
+  //check if there are more payload
+  spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_FIFO_STATUS;
+  spiData = 0; //'01001110'
+  fifoStatus = receive_data_from_spi(spiCmd, spiData) & RX_FIFO_EMPTY_MASK;
+  //printf("FIFO STATUS %d\n\r", fifoStatus);
+*/
+}
+
 
 /* This function is called from inside the CubeMX generated main.c,
  * inside the while(1) loop. */
 void my_main(void)
 {
+  //extern uint8_t sFlag;
+  uint8_t rxData = 0;
+  uint8_t fifoStatus = 0;
+  //uint8_t Rx_FIFO_EMPTY_Mask = 0x01;
+
+ 
+  uint8_t spiCmd = 0;
+  uint8_t spiData = 0;
 
   TaskingRun();  /* Run all registered tasks */
   my_Loop();
+  
+  //config_nrf24l01(Rx);
 
+  //printf("-----sFlag -----\n\r%d\n\r", sFlag);
+  if(sFlag)
+  {
+
+  //FIFO_STATUS
+  //check if there are more payload
+  spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_STATUS;
+  spiData = 0; //'01001110'
+  fifoStatus = (((receive_data_from_spi(spiCmd, spiData) & RX_DR_MASK) == 0x40)? 0 : 1);
+  //fifoStatus = receive_data_from_spi(spiCmd, spiData) & RX_DR_MASK;
+  //printf("-----FIFO STATUS---- %d\n\r", fifoStatus);
+  if(!fifoStatus)
+ {
+
+  rxData = RxMode();
+  printf("-----RxData -----\n\r%d\n\r", rxData);
+  //sFlag = 0;
+
+/*
+ //STATUS Register
+  // clear the RX_DR bit
+  spiCmd = _NRF24L01P_SPI_CMD_WR_REG |_NRF24L01P_REG_STATUS;
+  spiData = 94; //'01001110'
+  send_data_to_spi(spiCmd, spiData);
+
+//printf("Register --- FLUSH_TX\n\r");
+  //to read the content of the CONFIG register in nrf24L01 module
+  spiCmd = _NRF24L01P_SPI_CMD_RD_REG | _NRF24L01P_REG_STATUS;
+  spiData = 0; //'00000000'
+  spiData = receive_data_from_spi(spiCmd, spiData);
+
+  //FLUSH_RX
+  spiCmd = _NRF24L01P_SPI_CMD_FLUSH_RX;
+  spiData = 0; //'00000000'
+  send_data_to_spi(spiCmd, spiData);
+
+  //FIFO_STATUS
+  //check if there are more payload
+  spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_FIFO_STATUS;
+  spiData = 0; //'01001110'
+  fifoStatus = receive_data_from_spi(spiCmd, spiData) & RX_FIFO_EMPTY_MASK;
+  //printf("FIFO STATUS %d\n\r", fifoStatus);
+*/
+//clearFlags();
+
+ }
+fifoStatus = 0;
+sFlag = 0;
+clearFlags();
+  }
   WDTFeed();
 }
 

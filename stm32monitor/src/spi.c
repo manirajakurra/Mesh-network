@@ -5,10 +5,6 @@
 
 SPI_HandleTypeDef SpiHandle;
 
-#define MASTER_BOARD 1
-#define Tx 1
-#define Rx 0
-
 void GPIO_Init(void)
 {
 
@@ -47,10 +43,20 @@ void GPIO_Init(void)
   /*Configure GPIO pin : PA4 */
   //CSN
   GPIO_InitStruct.Pin = GPIO_PIN_4;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   //GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA9 */
+/*
+  GPIO_InitStruct.Pin = GPIO_PIN_9;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+*/
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 2, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
 }
 
@@ -73,17 +79,32 @@ void spi_init(void)
   SpiHandle.Init.NSS               = SPI_NSS_SOFT;
   SpiHandle.Init.NSSPMode          = SPI_NSS_PULSE_DISABLE;
 
-#ifdef MASTER_BOARD
   SpiHandle.Init.Mode = SPI_MODE_MASTER;
-#else
-  SpiHandle.Init.Mode = SPI_MODE_SLAVE;
-#endif /* MASTER_BOARD */
+
 
   if(HAL_SPI_Init(&SpiHandle) != HAL_OK)
   {
     /* Initialization Error */
     printf("Error in SPI Initialization\n\r");
   }
+}
+
+void send_payload_to_spi(uint8_t * payload, uint8_t payloadLen)
+{
+	uint8_t i = 0;
+	uint8_t spiCmd = _NRF24L01P_SPI_CMD_WR_TX_PAYLOAD;
+	RESET_CE;
+	SET_CSN;
+	HAL_Delay(10);
+	//SET_CE;
+	RESET_CSN;
+
+	HAL_SPI_Transmit(&SpiHandle, &spiCmd, payloadLen, 0);
+    HAL_SPI_Transmit(&SpiHandle, payload, payloadLen, 0);
+    for(i = 0; i < payloadLen; i++)
+    printf("spiData %d\n\r", payload[i]);
+    //HAL_SPI_Transmit(&SpiHandle, &spiData, 1, 0);
+    SET_CSN;
 }
 
  void send_data_to_spi(uint8_t spiCmd,uint8_t spiData)
@@ -114,11 +135,14 @@ void spi_init(void)
     HAL_SPI_Transmit(&SpiHandle, &spiCmd, 1, 0);
     HAL_SPI_Transmit(&SpiHandle, &spiData, 1, 0);
     HAL_SPI_Receive(&SpiHandle, &spiCmd, 1, 0);
-    printf("Status %d\n", spiData);
+   // HAL_Delay(1);
+   printf("Status %d\n\r", spiData);
     HAL_SPI_Receive(&SpiHandle, &spiData, 1, 0);
-    printf("Status %d\n", spiData);
+//HAL_Delay(1);    
+    printf("Status %d\n\r", spiData);
     HAL_SPI_Receive(&SpiHandle, &spiData, 1, 0);
-    printf("Status %d\n", spiData);
+//HAL_Delay(1);    
+    printf("Status %d\n\r", spiData);
     SET_CSN;
 	return spiData;
  }
@@ -175,7 +199,7 @@ printf("Register --- EN_AA\n\r");
 
   //FLUSH_TX
   spiCmd = _NRF24L01P_SPI_CMD_FLUSH_TX;
-  spiData = 0; //'00000011'
+  spiData = 0; //'00000000'
   send_data_to_spi(spiCmd, spiData);
 
 printf("Register --- FLUSH_TX\n\r");
@@ -186,7 +210,7 @@ printf("Register --- FLUSH_TX\n\r");
 
   //FLUSH_RX
   spiCmd = _NRF24L01P_SPI_CMD_FLUSH_RX;
-  spiData = 0; //'00000011'
+  spiData = 0; //'00000000'
   send_data_to_spi(spiCmd, spiData);
 
   //STATUS
@@ -198,7 +222,7 @@ printf("Register --- FLUSH_TX\n\r");
 printf("Register --- STATUS\n\r");
   //to read the content of the CONFIG register in nrf24L01 module
   spiCmd = _NRF24L01P_SPI_CMD_RD_REG | _NRF24L01P_REG_STATUS;
-  spiData = 126; //'00000000'
+  spiData = 0; //'00000000'
   spiData = receive_data_from_spi(spiCmd, spiData);
 
 printf("Register --- RX_ADDR_P0\n\r");
@@ -216,7 +240,7 @@ printf("Register --- TX_ADDR\n\r");
   //RF_CH
   //Use channel 0
   spiCmd = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_RF_CH;
-  spiData = 0; //'00000011'
+  spiData = 0; //'00000000'
   send_data_to_spi(spiCmd, spiData);
 
 printf("Register --- RF_CH\n\r");
@@ -228,7 +252,7 @@ printf("Register --- RF_CH\n\r");
   //RX_PW_R0
   //Set payload width as 1 Byte
   spiCmd = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_RX_PW_P0;
-  spiData = 1; //'00000001'
+  spiData = PAYLOAD_LEN; //'00000001'
   send_data_to_spi(spiCmd, spiData);
 
 printf("Register --- RX_PW_P0\n\r");
@@ -240,7 +264,7 @@ printf("Register --- RX_PW_P0\n\r");
   //RX_PW_R1
   //Set payload width as 1 Byte
   spiCmd = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_RX_PW_P1;
-  spiData = 1; //'00000001'
+  spiData = PAYLOAD_LEN; //'00000001'
   send_data_to_spi(spiCmd, spiData);
 
 printf("Register --- RX_PW_P1\n\r");
@@ -252,73 +276,6 @@ printf("Register --- RX_PW_P1\n\r");
 
  }
 
-ParserReturnVal_t CmdSPIMasterTx(int action)
-{
-  uint8_t spiCmd = 0;
-  uint8_t spiData = 0;
-  uint8_t i = 0;
-  
-
-  if(action==CMD_SHORT_HELP) return CmdReturnOk;
-
-  GPIO_Init();
-  spi_init();
-  //configuration of nRF24L01
-  config_nrf24l01(Tx);
-  printf("Configuration done\n\r");
-  /* Infinite loop */
-  RESET_CE;
-  while (i < 5)
-  {
-      //W_TX_PAYLOAD
-      
-      spiCmd = _NRF24L01P_SPI_CMD_WR_TX_PAYLOAD;
-      spiData = 12; //'00001100'
-      send_data_to_spi(spiCmd, spiData);
-      SET_CE;
-      HAL_Delay(10);
-      i++;
-      RESET_CE;
-  }
-
-  return CmdReturnOk;
-}
-
-ADD_CMD("SPI_MASTER_TX",CmdSPIMasterTx,"This is used for transmitting--Master Node")
-
-
-ParserReturnVal_t CmdSPIMasterRx(int action)
-{
-  uint8_t spiCmd = 0;
-  uint8_t spiData = 0;
-  //uint8_t i = 0;
-  uint8_t sFlag = 1;
-
-  if(action==CMD_SHORT_HELP) return CmdReturnOk;
-
-  GPIO_Init();
-  spi_init();
-  //configuration of nRF24L01
-  config_nrf24l01(Rx);
-  printf("Configuration done\n\r");
-  /* Infinite loop */
-  SET_CE;
-  HAL_Delay(1);
-  while(sFlag)
-  {
-  //printf("Rxd Flag is%d\n\r", sFlag);
-  sFlag = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4);
-  }
-  printf("Rxd Flag is%d\n\r", sFlag);
-  spiCmd = _NRF24L01P_SPI_CMD_RD_RX_PAYLOAD;
-  spiData = 0;
-  spiData = receive_data_from_spi(spiCmd, spiData);
-  printf("payload is %d\n\r", spiData);
-
-  return CmdReturnOk;
-}
-
-ADD_CMD("SPI_MASTER_RX",CmdSPIMasterRx,"This is used for Receiving--Slave Node")
 
 
 

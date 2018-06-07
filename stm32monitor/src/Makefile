@@ -4,7 +4,7 @@
 
 # C source files for the project
 PROJ_NAME = simple_monitor
-SRCS  = my_main.c mycode.s mytest.c spi.c tasks.c
+SRCS  = my_main.c mycode.s mytest.c spi.c tasks.c transceiver.c
 BUILD = build
 
 

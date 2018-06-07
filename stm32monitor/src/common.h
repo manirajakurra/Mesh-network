@@ -132,6 +132,14 @@ int32_t TaskKill(int32_t id);
 int32_t TaskSwitcher(void);
  int32_t TaskNext(void);
 
+uint8_t RxMode();
+void GPIO_Init(void);
+void spi_init(void);
+void send_data_to_spi(uint8_t, uint8_t);
+uint8_t receive_data_from_spi(uint8_t, uint8_t);
+void config_nrf24l01(uint8_t);
+extern uint8_t sFlag;
+void send_payload_to_spi(uint8_t *, uint8_t);
 /* version info functions */
 void VersionPrint(void);
 extern const time_t VersionBuildDate;

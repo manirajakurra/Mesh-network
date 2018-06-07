@@ -1,6 +1,14 @@
 #ifndef __NRF24L01_LIB_H
 #define __NRF24L01_LIB_H
 
+#define Tx 1
+#define Rx 0
+#define PAYLOAD_LEN 1
+
+#define RX_FIFO_EMPTY_MASK  0x01
+#define RX_DR_MASK  0x40
+#define TX_DS_MASK 0x20
+
 //SPI commands
 #define _NRF24L01P_SPI_CMD_RD_REG            0x00
 #define _NRF24L01P_SPI_CMD_WR_REG            0x20
@@ -46,6 +54,6 @@
 #define RESET_CSN HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET); // RESET CSN
 #define SET_CE HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET); // SET CE
 #define RESET_CE HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_RESET); // RESET CE
-#define READ_IRQ_PIN HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4); // Read IRQ Pin;
+#define READ_PWR_ON_PIN HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_4); // Read IRQ Pin;
 
 #endif
