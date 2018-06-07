@@ -58,7 +58,7 @@ void clearFlags()
 //STATUS Register
   // clear the RX_DR bit
   spiCmd = _NRF24L01P_SPI_CMD_WR_REG |_NRF24L01P_REG_STATUS;
-  spiData = 126; //'01001110'
+  spiData = 94; //'01001110'
   send_data_to_spi(spiCmd, spiData);
 
 //printf("Register --- FLUSH_TX\n\r");
@@ -103,7 +103,7 @@ void my_main(void)
   //printf("-----sFlag -----\n\r%d\n\r", sFlag);
   if(sFlag)
   {
-
+sFlag = 0;
   //FIFO_STATUS
   //check if there are more payload
   spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_STATUS;
@@ -113,43 +113,16 @@ void my_main(void)
   //printf("-----FIFO STATUS---- %d\n\r", fifoStatus);
   if(!fifoStatus)
  {
-
+  RESET_CE;
   rxData = RxMode();
   printf("-----RxData -----\n\r%d\n\r", rxData);
-  //sFlag = 0;
-
-/*
- //STATUS Register
-  // clear the RX_DR bit
-  spiCmd = _NRF24L01P_SPI_CMD_WR_REG |_NRF24L01P_REG_STATUS;
-  spiData = 94; //'01001110'
-  send_data_to_spi(spiCmd, spiData);
-
-//printf("Register --- FLUSH_TX\n\r");
-  //to read the content of the CONFIG register in nrf24L01 module
-  spiCmd = _NRF24L01P_SPI_CMD_RD_REG | _NRF24L01P_REG_STATUS;
-  spiData = 0; //'00000000'
-  spiData = receive_data_from_spi(spiCmd, spiData);
-
-  //FLUSH_RX
-  spiCmd = _NRF24L01P_SPI_CMD_FLUSH_RX;
-  spiData = 0; //'00000000'
-  send_data_to_spi(spiCmd, spiData);
-
-  //FIFO_STATUS
-  //check if there are more payload
-  spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_FIFO_STATUS;
-  spiData = 0; //'01001110'
-  fifoStatus = receive_data_from_spi(spiCmd, spiData) & RX_FIFO_EMPTY_MASK;
-  //printf("FIFO STATUS %d\n\r", fifoStatus);
-*/
-//clearFlags();
-
  }
-fifoStatus = 0;
-sFlag = 0;
-clearFlags();
-  }
+ fifoStatus = 1;
+
+ clearFlags();
+ 
+ SET_CE;
+ }
   WDTFeed();
 }
 
