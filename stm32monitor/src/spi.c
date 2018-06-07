@@ -93,7 +93,7 @@ void send_payload_to_spi(uint8_t * payload, uint8_t payloadLen)
 {
 	uint8_t i = 0;
 	uint8_t spiCmd = _NRF24L01P_SPI_CMD_WR_TX_PAYLOAD;
-	RESET_CE;
+	//RESET_CE;
 	SET_CSN;
 	HAL_Delay(10);
 	//SET_CE;
@@ -112,7 +112,7 @@ void send_payload_to_spi(uint8_t * payload, uint8_t payloadLen)
 
  void send_data_to_spi(uint8_t spiCmd,uint8_t spiData)
  {
-	RESET_CE;
+	//RESET_CE;
 	SET_CSN;
 	HAL_Delay(10);
 	//SET_CE;
@@ -129,7 +129,7 @@ void send_payload_to_spi(uint8_t * payload, uint8_t payloadLen)
 
  uint8_t receive_data_from_spi(uint8_t spiCmd, uint8_t spiData)
  {
-	RESET_CE;
+	//RESET_CE;
 	SET_CSN;
 	HAL_Delay(10);
 	RESET_CSN;
@@ -160,7 +160,7 @@ void receive_payload_from_spi(uint8_t * payload, uint8_t payloadLen)
   //spiData = 0;
   //spiData = receive_data_from_spi(spiCmd, spiData);
 
-	RESET_CE;
+	//RESET_CE;
 	SET_CSN;
 	HAL_Delay(10);
 	RESET_CSN;

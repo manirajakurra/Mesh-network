@@ -111,7 +111,7 @@ sFlag = 0;
   fifoStatus = (((receive_data_from_spi(spiCmd, spiData) & RX_DR_MASK) == 0x40)? 0 : 1);
   if(!fifoStatus)
  {
-  RESET_CE;
+  //RESET_CE;
   receive_payload_from_spi(rxData, PAYLOAD_LEN);
   printf("-----RxData -----\n\r\n\r");
   for(i = 0; i < PAYLOAD_LEN; i++)
@@ -120,7 +120,7 @@ sFlag = 0;
  fifoStatus = 1;
 
  clearFlags();
- SET_CE;
+ //SET_CE;
  }
   WDTFeed();
 }

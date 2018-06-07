@@ -29,10 +29,11 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
   GPIO_Init();
   spi_init();
   //configuration of nRF24L01
+  RESET_CE;
   config_nrf24l01(Tx);
   printf("Configuration done\n\r");
   /* Infinite loop */
-  RESET_CE;
+  
  // while (i < 5)
   //{
       //W_TX_PAYLOAD
@@ -53,6 +54,7 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
   send_data_to_spi(spiCmd, spiData);
   sFlag =0;
   config_nrf24l01(Rx);
+  SET_CE;
 //  }
 
   return CmdReturnOk;
