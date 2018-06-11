@@ -16,37 +16,27 @@ uint8_t RxMode()
 }
 
 
-ParserReturnVal_t CmdSPIMasterTx(int action)
+void txMode(uint8_t *txData)
 {
+
   uint8_t spiCmd = 0;
   uint8_t spiData = 0;
- uint8_t txData[PAYLOAD_LEN] = {11,12,13,14,15,16,17,18};
+ 
   uint8_t i = 0;
-  
 
-  if(action==CMD_SHORT_HELP) return CmdReturnOk;
-
-  GPIO_Init();
-  spi_init();
-  //configuration of nRF24L01
   RESET_CE;
   config_nrf24l01(Tx);
   printf("Configuration done\n\r");
   /* Infinite loop */
   
- // while (i < 5)
-  //{
-      //W_TX_PAYLOAD
-      
-      //spiCmd = _NRF24L01P_SPI_CMD_WR_TX_PAYLOAD;
-      //spiData = 12 + i; //'00001100'
+
       send_payload_to_spi(txData, PAYLOAD_LEN);
       SET_CE;
       //HAL_Delay(10);
       i++;
       RESET_CE;
       while(!sFlag);
-	
+		
  //STATUS Register
   // clear the TX_DS bit
   spiCmd = _NRF24L01P_SPI_CMD_WR_REG |_NRF24L01P_REG_STATUS;
@@ -55,6 +45,18 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
   sFlag =0;
   config_nrf24l01(Rx);
   SET_CE;
+
+}
+
+ParserReturnVal_t CmdSPIMasterTx(int action)
+{
+  uint8_t txData[PAYLOAD_LEN] = {11,12,13,14,15,16,17,18};
+  if(action==CMD_SHORT_HELP) return CmdReturnOk;
+
+ // GPIO_Init();
+  //spi_init();
+  //configuration of nRF24L01
+  txMode(txData);
 //  }
 
   return CmdReturnOk;

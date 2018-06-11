@@ -89,6 +89,7 @@ void my_main(void)
   //extern uint8_t sFlag;
   uint8_t rxData[PAYLOAD_LEN] = {0};
   uint8_t fifoStatus = 0;
+  uint8_t txData[PAYLOAD_LEN] = {21,22,23,24,25,26,27,28};
   //uint8_t Rx_FIFO_EMPTY_Mask = 0x01;
 
   uint8_t i = 0;
@@ -116,6 +117,8 @@ sFlag = 0;
   printf("-----RxData -----\n\r\n\r");
   for(i = 0; i < PAYLOAD_LEN; i++)
     printf("%d\n\r", rxData[i]);
+  if(rxData[1] == 12)
+  txMode(txData);
  }
  fifoStatus = 1;
 

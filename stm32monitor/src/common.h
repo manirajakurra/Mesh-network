@@ -141,6 +141,7 @@ void config_nrf24l01(uint8_t);
 extern uint8_t sFlag;
 void send_payload_to_spi(uint8_t *, uint8_t);
 void receive_payload_from_spi(uint8_t *, uint8_t);
+void txMode(uint8_t *);
 
 /* version info functions */
 void VersionPrint(void);
