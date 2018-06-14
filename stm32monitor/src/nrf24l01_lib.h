@@ -3,7 +3,7 @@
 
 #define Tx 1
 #define Rx 0
-#define PAYLOAD_LEN 8
+#define PAYLOAD_LEN 4
 
 #define RX_FIFO_EMPTY_MASK  0x01
 #define RX_DR_MASK  0x40

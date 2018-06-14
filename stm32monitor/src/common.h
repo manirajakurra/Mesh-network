@@ -29,6 +29,8 @@
 #define CMD_SHORT_HELP    1
 #define CMD_LONG_HELP     2
 
+#define NODE_ID 0x01
+
 /* Include command return codes */
 typedef enum ParserReturnVal_e {
 #define DEF_ENUM(name)   CmdReturn##name,
@@ -49,6 +51,9 @@ const parse_table f##E __attribute__ ((section(".parsetable." name))) = { \
     .cmdname = name,  \
     .func    = f, \
     .help    = helptxt };
+
+
+
 
 void TaskInputInit(void);
 void TaskInput(void *data);
@@ -142,6 +147,12 @@ extern uint8_t sFlag;
 void send_payload_to_spi(uint8_t *, uint8_t);
 void receive_payload_from_spi(uint8_t *, uint8_t);
 void txMode(uint8_t *);
+void sendControlMsg(uint8_t *, uint8_t, uint8_t);
+uint8_t configPipe(uint8_t);
+
+uint8_t configTxAddress(uint8_t);
+void readpipeAdress(uint8_t);
+//uint8_t txActive = 0;
 
 /* version info functions */
 void VersionPrint(void);

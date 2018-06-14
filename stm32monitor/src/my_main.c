@@ -9,6 +9,8 @@
 /* This include will give us the CubeMX generated defines */
 #include "main.h"
 
+#define CHANNEL_ADDRESS 0xD3
+
 /* This function is called from the CubeMX generated main.c, after all
  * the HAL peripherals have been initialized. */
 void my_init(void)
@@ -34,6 +36,12 @@ void my_init(void)
 }
 
 uint8_t sFlag = 0;
+uint8_t txActive = 0;
+
+char msg[10] = "ABCDEFGHI";
+uint8_t rxNodeID = 0;
+
+uint8_t txData1[PAYLOAD_LEN] = {99,98,97,96};
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
@@ -88,13 +96,18 @@ void my_main(void)
 {
   //extern uint8_t sFlag;
   uint8_t rxData[PAYLOAD_LEN] = {0};
-  uint8_t fifoStatus = 0;
-  uint8_t txData[PAYLOAD_LEN] = {21,22,23,24,25,26,27,28};
+  uint8_t fifoStatusRx = 0;
+  uint8_t txData[PAYLOAD_LEN] = {21,22,23,24};
+ uint8_t interruptinfo = 0;
   //uint8_t Rx_FIFO_EMPTY_Mask = 0x01;
 
   uint8_t i = 0;
   uint8_t spiCmd = 0;
   uint8_t spiData = 0;
+  uint8_t txStage = 0;
+  uint8_t ackStage = 1;
+  uint8_t configStatus = 0;
+ 
 
   TaskingRun();  /* Run all registered tasks */
   my_Loop();
@@ -104,27 +117,102 @@ void my_main(void)
   //printf("-----sFlag -----\n\r%d\n\r", sFlag);
   if(sFlag)
   {
-sFlag = 0;
+  sFlag = 0;
   //FIFO_STATUS
   //check if there are more payload
   spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_STATUS;
   spiData = 0; //'01001110'
-  fifoStatus = (((receive_data_from_spi(spiCmd, spiData) & RX_DR_MASK) == 0x40)? 0 : 1);
-  if(!fifoStatus)
+  interruptinfo = receive_data_from_spi(spiCmd, spiData);
+
+  fifoStatusRx = (((interruptinfo & RX_DR_MASK) == 0x40)? 0 : 1);
+  if(!fifoStatusRx)
  {
   //RESET_CE;
   receive_payload_from_spi(rxData, PAYLOAD_LEN);
   printf("-----RxData -----\n\r\n\r");
   for(i = 0; i < PAYLOAD_LEN; i++)
     printf("%d\n\r", rxData[i]);
-  if(rxData[1] == 12)
-  txMode(txData);
+
+ if(rxData[2] == NODE_ID)
+ {
+  ackStage = 1;
+  switch(rxData[0])
+  {
+	case 0x01: txData[3] = 0;
+		sendControlMsg(txData, rxData[1], 0x21);
+		break;
+	case 0x02: txData[3] = 0;
+		sendControlMsg(txData, rxData[1], 0x22);
+		break;
+	case 0x04: printf("\n\n\r-------Configuring data pipe2-------\n\n\r");
+		configStatus = configPipe(rxData[3]);
+                if(configStatus)
+                 printf("\n\n\rDone\n\n\r");
+		
+		spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_PW_P2;
+		readpipeAdress(spiCmd);
+		txData[3] = 0;
+		sendControlMsg(txData, rxData[1], 0x24);
+		break;
+	case 0x21: 
+		txActive = 1;
+		txStage = 3;
+		ackStage = 1;
+		break;
+	case 0x22: 
+		txActive = 1;
+		txStage++;
+		ackStage = 1;
+		break;
+        case 0x23: 
+		txActive = 1;
+		txStage++;
+		ackStage = 1;
+		break;
+   	case 0x24:
+		configStatus = configPipe(CHANNEL_ADDRESS);
+		configTxAddress(CHANNEL_ADDRESS);
+		printf("\n\n\r-------Configuring Adress data pipe2-------\n\n\r");
+		spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_PW_P2;
+		readpipeAdress(spiCmd);
+		txActive = 1;
+		txStage = 4;
+		ackStage = 1;
+		break;
+		
+  }
  }
- fifoStatus = 1;
+ }
+ fifoStatusRx = 1;
 
  clearFlags();
  //SET_CE;
  }
+
+if(txActive && ackStage)
+{
+  switch(txStage)
+  {
+    case 0: txData[3] = 0;
+	sendControlMsg(txData, rxNodeID, 0x01);
+	break;
+    case 1: txData[3] = 0;
+	 sendControlMsg(txData, 0x00, 0x02);
+        break;
+    case 2: txData[3] = 0;
+	sendControlMsg(txData, rxNodeID, 0x03);
+	break;
+    case 3: txData[3] = CHANNEL_ADDRESS;
+        sendControlMsg(txData, 0x02, 0x04);
+	break;
+   case 4: 
+	txMode(txData1);
+        //configPipe(CHANNEL_ADDRESS);
+  }
+ ackStage = 0;
+
+}
+
   WDTFeed();
 }
 
