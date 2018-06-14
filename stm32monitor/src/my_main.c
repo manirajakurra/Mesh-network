@@ -11,6 +11,17 @@
 
 #define CHANNEL_ADDRESS 0xD3
 
+uint8_t sFlag = 0;
+uint8_t txActive = 0;
+uint8_t txStage = 0;
+
+char msg[10] = "ABCDEFGHI";
+uint8_t rxNodeID = 0;
+
+uint8_t txData1[PAYLOAD_LEN] = {99,98,97,96};
+uint8_t ackStage = 1;
+
+
 /* This function is called from the CubeMX generated main.c, after all
  * the HAL peripherals have been initialized. */
 void my_init(void)
@@ -35,13 +46,6 @@ void my_init(void)
 
 }
 
-uint8_t sFlag = 0;
-uint8_t txActive = 0;
-
-char msg[10] = "ABCDEFGHI";
-uint8_t rxNodeID = 0;
-
-uint8_t txData1[PAYLOAD_LEN] = {99,98,97,96};
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
@@ -98,16 +102,15 @@ void my_main(void)
   uint8_t rxData[PAYLOAD_LEN] = {0};
   uint8_t fifoStatusRx = 0;
   uint8_t txData[PAYLOAD_LEN] = {21,22,23,24};
- uint8_t interruptinfo = 0;
+// uint8_t interruptinfo = 0;
   //uint8_t Rx_FIFO_EMPTY_Mask = 0x01;
 
   uint8_t i = 0;
   uint8_t spiCmd = 0;
   uint8_t spiData = 0;
-  uint8_t txStage = 0;
-  uint8_t ackStage = 1;
+
+  
   uint8_t configStatus = 0;
- 
 
   TaskingRun();  /* Run all registered tasks */
   my_Loop();
@@ -117,14 +120,12 @@ void my_main(void)
   //printf("-----sFlag -----\n\r%d\n\r", sFlag);
   if(sFlag)
   {
-  sFlag = 0;
+sFlag = 0;
   //FIFO_STATUS
   //check if there are more payload
   spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_STATUS;
   spiData = 0; //'01001110'
-  interruptinfo = receive_data_from_spi(spiCmd, spiData);
-
-  fifoStatusRx = (((interruptinfo & RX_DR_MASK) == 0x40)? 0 : 1);
+  fifoStatusRx = (((receive_data_from_spi(spiCmd, spiData) & RX_DR_MASK) == 0x40)? 0 : 1);
   if(!fifoStatusRx)
  {
   //RESET_CE;
@@ -132,10 +133,9 @@ void my_main(void)
   printf("-----RxData -----\n\r\n\r");
   for(i = 0; i < PAYLOAD_LEN; i++)
     printf("%d\n\r", rxData[i]);
-
- if(rxData[2] == NODE_ID)
+if(rxData[2] == NODE_ID)
  {
-  ackStage = 1;
+ // ackStage = 1;
   switch(rxData[0])
   {
 	case 0x01: txData[3] = 0;
@@ -182,15 +182,19 @@ void my_main(void)
 		
   }
  }
+
  }
  fifoStatusRx = 1;
 
  clearFlags();
- //SET_CE;
+
+
  }
 
 if(txActive && ackStage)
 {
+
+printf("\n\n\r----------------STAGE OF TX ----------\n\n\n\r");
   switch(txStage)
   {
     case 0: txData[3] = 0;
@@ -203,7 +207,7 @@ if(txActive && ackStage)
 	sendControlMsg(txData, rxNodeID, 0x03);
 	break;
     case 3: txData[3] = CHANNEL_ADDRESS;
-        sendControlMsg(txData, 0x02, 0x04);
+        sendControlMsg(txData, rxNodeID, 0x04);
 	break;
    case 4: 
 	txMode(txData1);

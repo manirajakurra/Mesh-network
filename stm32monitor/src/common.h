@@ -12,7 +12,9 @@
 /* Include HAL definitions */
 #include "stm32f3xx_hal.h"
 
-/* How many system ticks per second */
+#define NODE_ID 0x02
+
+
 #define TICK_RATE       (1000)
 #define MILLISECONDS(x) ((x*1000)/TICK_RATE)
 #define SECONDS(x)      ((x)*TICK_RATE)
@@ -28,8 +30,6 @@
 #define CMD_INTERACTIVE   0
 #define CMD_SHORT_HELP    1
 #define CMD_LONG_HELP     2
-
-#define NODE_ID 0x01
 
 /* Include command return codes */
 typedef enum ParserReturnVal_e {
@@ -51,9 +51,6 @@ const parse_table f##E __attribute__ ((section(".parsetable." name))) = { \
     .cmdname = name,  \
     .func    = f, \
     .help    = helptxt };
-
-
-
 
 void TaskInputInit(void);
 void TaskInput(void *data);
@@ -152,8 +149,6 @@ uint8_t configPipe(uint8_t);
 
 uint8_t configTxAddress(uint8_t);
 void readpipeAdress(uint8_t);
-//uint8_t txActive = 0;
-
 /* version info functions */
 void VersionPrint(void);
 extern const time_t VersionBuildDate;

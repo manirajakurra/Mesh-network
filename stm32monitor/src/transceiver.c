@@ -15,6 +15,7 @@ uint8_t RxMode()
   return(spiData);
 }
 
+
 void sendControlMsg(uint8_t *data, uint8_t rxID, uint8_t reqID)
 {
   uint8_t spiCmd = 0;
@@ -33,7 +34,12 @@ void sendControlMsg(uint8_t *data, uint8_t rxID, uint8_t reqID)
 
       send_payload_to_spi(data, payLoadLen);
       SET_CE;
-      //HAL_Delay(10);
+
+  spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_STATUS;
+  spiData = 0; //'01001110'
+  spiData = receive_data_from_spi(spiCmd, spiData);
+
+printf("\n\n\n\rTX STATUS: %d\n\n\n\r", spiData);
       i++;
       RESET_CE;
       while(!sFlag);
@@ -49,8 +55,6 @@ void sendControlMsg(uint8_t *data, uint8_t rxID, uint8_t reqID)
 
 
 }
-
-//void tx()
 
 void txMode(uint8_t *txData)
 {
@@ -68,11 +72,15 @@ void txMode(uint8_t *txData)
 
       send_payload_to_spi(txData, PAYLOAD_LEN);
       SET_CE;
-      //HAL_Delay(10);
+       spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_STATUS;
+  spiData = 0; //'01001110'
+  spiData = receive_data_from_spi(spiCmd, spiData);
+
+printf("\n\n\n\rTX STATUS: %d\n\n\n\r", spiData);
       i++;
-      RESET_CE;
+      
       while(!sFlag);
-		
+	RESET_CE;	
  //STATUS Register
   // clear the TX_DS bit
   spiCmd = _NRF24L01P_SPI_CMD_WR_REG |_NRF24L01P_REG_STATUS;
@@ -87,8 +95,12 @@ void txMode(uint8_t *txData)
 ParserReturnVal_t CmdSPIMasterTx(int action)
 {
   extern  uint8_t txActive;
+extern uint8_t ackStage;
 uint32_t nodeID = 0;
   extern  uint8_t rxNodeID;
+extern uint8_t txStage;
+
+
   HAL_StatusTypeDef rc;
 //char **s = msg;
   
@@ -116,7 +128,10 @@ uint32_t nodeID = 0;
 	return 0;
 	}
 */
+config_nrf24l01(Rx);
   txActive = 1;
+ackStage = 1;
+txStage = 0;
 //  }
 
   return CmdReturnOk;
