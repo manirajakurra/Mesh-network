@@ -147,8 +147,11 @@ void txMode(uint8_t *);
 void sendControlMsg(uint8_t *, uint8_t, uint8_t);
 uint8_t configPipe(uint8_t);
 
-uint8_t configTxAddress(uint8_t);
+void configTxAddress(uint8_t *);
 void readpipeAdress(uint8_t);
+void configRxAddress(uint8_t *);
+
+
 /* version info functions */
 void VersionPrint(void);
 extern const time_t VersionBuildDate;

@@ -321,7 +321,7 @@ uint8_t configPipe(uint8_t adress)
   //EN_RXADDR
   //Enable data pipe 0,1 and 2
   spiCmd = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_EN_RXADDR;
-  spiData = 7; //'00000011'
+  spiData = 7; //'00000111'
   send_data_to_spi(spiCmd, spiData);
   
   //RX_ADDR_P2
@@ -342,57 +342,61 @@ uint8_t configPipe(uint8_t adress)
 return(configStatus);
 }
 
-
-uint8_t configTxAddress(uint8_t Adrs)
+void configRxAddress(uint8_t * Adrs)
 {
-
-  uint8_t configStatus = 0;
-	uint8_t spiCmd = 0;
-	uint8_t spiData = 0xC2;
-
-   //EN_RXADDR
-  //Enable data pipe 0,1 and 2
-  spiCmd = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_TX_ADDR;
-  //spiData = Adrs; //'00000011'
-  	SET_CSN;
+	uint8_t i = 0;
+	uint8_t spiCmd = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_RX_ADDR_P1;
+	//RESET_CE;
+	SET_CSN;
 	HAL_Delay(10);
 	//SET_CE;
 	RESET_CSN;
 
 	HAL_SPI_Transmit(&SpiHandle, &spiCmd, 1, 0);
-    HAL_SPI_Transmit(&SpiHandle, &Adrs, 1, 0);
-    printf("A0 %x\n\r", Adrs);
-   /* HAL_SPI_Transmit(&SpiHandle, &spiData, 1, 0);
-    printf("A1 %x\n\r", spiData);
-    HAL_SPI_Transmit(&SpiHandle, &spiData, 1, 0);
-    printf("A2 %x\n\r", spiData);
-    HAL_SPI_Transmit(&SpiHandle, &spiData, 1, 0);
-    printf("A3 %x\n\r", spiData);
-    HAL_SPI_Transmit(&SpiHandle, &spiData, 1, 0);
-    printf("A4 %x\n\r", spiData);
-    //HAL_SPI_Transmit(&SpiHandle, &spiData, 1, 0);*/
+    
+    for(i = 0; i < 5; i++)
+    {
+      HAL_SPI_Transmit(&SpiHandle, (Adrs+i), 1, 0);
+      printf("payload %d\n\r", Adrs[i]);
+    }
+    //HAL_SPI_Transmit(&SpiHandle, &spiData, 1, 0);
     SET_CSN;
+}
 
 
-  printf("\n\n\n\rRegister --- TX_ADDR\n\n\n\r");
-  //to read the content of the CONFIG register in nrf24L01 module
-  spiCmd = _NRF24L01P_SPI_CMD_RD_REG | _NRF24L01P_REG_TX_ADDR;
-  spiData = 0; //'00000000'
-  spiData = receive_data_from_spi(spiCmd, spiData);
 
-return(configStatus);
 
+void configTxAddress(uint8_t * Adrs)
+{
+	uint8_t i = 0;
+	uint8_t spiCmd = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_TX_ADDR;
+	//RESET_CE;
+	SET_CSN;
+	HAL_Delay(10);
+	//SET_CE;
+	RESET_CSN;
+
+	HAL_SPI_Transmit(&SpiHandle, &spiCmd, 1, 0);
+    
+    for(i = 0; i < 5; i++)
+    {
+      HAL_SPI_Transmit(&SpiHandle, (Adrs+i), 1, 0);
+      printf("payload %d\n\r", Adrs[i]);
+    }
+    //HAL_SPI_Transmit(&SpiHandle, &spiData, 1, 0);
+    SET_CSN;
 }
 
 
 void readpipeAdress(uint8_t spiCmd)
-{
-
+ {
  // uint8_t spiCmd = 0;
-  uint8_t spiData[5];
+  uint8_t spiData = 0;
   uint8_t i= 0;
-  uint8_t adrs[5] = {0,0,0,0,0};
-  //spiCmd = _NRF24L01P_SPI_CMD_RD_RX_PAYLOAD;
+  uint8_t pipeAdr[5] = {0,0,0,0,0};
+
+  //spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_ADDR_P2;
+   //spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_TX_ADDR;
   //spiData = 0;
   //spiData = receive_data_from_spi(spiCmd, spiData);
 
@@ -403,18 +407,20 @@ void readpipeAdress(uint8_t spiCmd)
 	//uint8_t Rxd_Data = 0;
 
     HAL_SPI_Transmit(&SpiHandle, &spiCmd, 1, 0);
-    HAL_SPI_Transmit(&SpiHandle, spiData, 1, 0);
-    HAL_SPI_Receive(&SpiHandle, spiData, 1, 0); 
-    printf("SL %d %d\n\r", *(spiData), i);
-   HAL_SPI_Receive(&SpiHandle, spiData, 1, 0); 
-  printf("SL %d %d\n\r", *(spiData), i);
+    HAL_SPI_Transmit(&SpiHandle, &spiData, 1, 0);
+    HAL_SPI_Receive(&SpiHandle, &spiData, 1, 0); 
+    printf("SL %d %d\n\r", spiData, i);
+   HAL_SPI_Receive(&SpiHandle, &spiData, 1, 0); 
+  printf("SL %d %d\n\r", spiData, i);
 
   for(i = 0; i<5; i++)
   {
-    HAL_SPI_Receive(&SpiHandle, (adrs+i), 1, 0);
+    HAL_SPI_Receive(&SpiHandle, (pipeAdr+i), 1, 0);
    // HAL_Delay(1);
-   printf("AD %d %d\n\r", *(adrs+i), i);
+   printf("P2 Adrs %d %d\n\r", *(pipeAdr+i), i);
   }
     SET_CSN;
-}
+ }
+
+
 

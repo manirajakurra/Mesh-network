@@ -99,6 +99,7 @@ extern uint8_t ackStage;
 uint32_t nodeID = 0;
   extern  uint8_t rxNodeID;
 extern uint8_t txStage;
+uint8_t spiCmd =0;
 
 
   HAL_StatusTypeDef rc;
@@ -120,6 +121,22 @@ extern uint8_t txStage;
 	}
         
 	rxNodeID = (uint8_t) nodeID;
+
+spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_ADDR_P1;
+printf("\n\n\n\r P1 PIPE ADress\n\n\r");
+	readpipeAdress(spiCmd);
+
+
+spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_ADDR_P0;
+printf("\n\n\n\r P0 PIPE ADress\n\n\r");
+	readpipeAdress(spiCmd);
+
+
+
+spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_TX_ADDR;
+printf("\n\n\n\r P1 PIPE TX   ADress\n\n\r");
+	readpipeAdress(spiCmd);
+
 
 /*	rc = fetch_string_arg(&msg);
 	if(rc)

@@ -19,7 +19,12 @@ char msg[10] = "ABCDEFGHI";
 uint8_t rxNodeID = 0;
 
 uint8_t txData1[PAYLOAD_LEN] = {99,98,97,96};
+
+uint8_t rxData1[PAYLOAD_LEN] = {199,198,197,196};
+
 uint8_t ackStage = 1;
+
+uint8_t payloadRxdStatus = 0;
 
 
 /* This function is called from the CubeMX generated main.c, after all
@@ -102,6 +107,7 @@ void my_main(void)
   uint8_t rxData[PAYLOAD_LEN] = {0};
   uint8_t fifoStatusRx = 0;
   uint8_t txData[PAYLOAD_LEN] = {21,22,23,24};
+ uint8_t txAdrs[5] = {194,194,194,194,211};
 // uint8_t interruptinfo = 0;
   //uint8_t Rx_FIFO_EMPTY_Mask = 0x01;
 
@@ -133,6 +139,19 @@ sFlag = 0;
   printf("-----RxData -----\n\r\n\r");
   for(i = 0; i < PAYLOAD_LEN; i++)
     printf("%d\n\r", rxData[i]);
+
+if(payloadRxdStatus) // rxd payload
+{
+		spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_ADDR_P1;
+printf("\n\n\r-------Configuring data pipe2 RX -------\n\n\r");
+		readpipeAdress(spiCmd);
+
+
+printf("\n\n\r-------Acknowledgment for payload-------\n\n\r");
+txMode(rxData1);
+
+}
+
 if(rxData[2] == NODE_ID)
  {
  // ackStage = 1;
@@ -146,13 +165,19 @@ if(rxData[2] == NODE_ID)
 		break;
 	case 0x04: printf("\n\n\r-------Configuring data pipe2-------\n\n\r");
 		configStatus = configPipe(rxData[3]);
+                configRxAddress(txAdrs);
                 if(configStatus)
                  printf("\n\n\rDone\n\n\r");
-		
-		spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_PW_P2;
+
+		spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_ADDR_P1;
+printf("\n\n\r-------Configuring data pipe2 RX -------\n\n\r");
 		readpipeAdress(spiCmd);
 		txData[3] = 0;
 		sendControlMsg(txData, rxData[1], 0x24);
+		payloadRxdStatus = 1;
+printf("\n\n\r-------Configuring data pipe2 TX -------\n\n\r");
+		configTxAddress(txAdrs);
+
 		break;
 	case 0x21: 
 		txActive = 1;
@@ -171,9 +196,11 @@ if(rxData[2] == NODE_ID)
 		break;
    	case 0x24:
 		configStatus = configPipe(CHANNEL_ADDRESS);
-		configTxAddress(CHANNEL_ADDRESS);
+configRxAddress(txAdrs);
+		configTxAddress(txAdrs);
+spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_TX_ADDR;
 		printf("\n\n\r-------Configuring Adress data pipe2-------\n\n\r");
-		spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_PW_P2;
+		//spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_PW_P2;
 		readpipeAdress(spiCmd);
 		txActive = 1;
 		txStage = 4;
@@ -181,7 +208,11 @@ if(rxData[2] == NODE_ID)
 		break;
 		
   }
+
  }
+
+
+
 
  }
  fifoStatusRx = 1;
