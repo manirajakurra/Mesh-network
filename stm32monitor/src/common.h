@@ -12,7 +12,7 @@
 /* Include HAL definitions */
 #include "stm32f3xx_hal.h"
 
-#define NODE_ID 0x02
+#define NODE_ID 0x03
 
 
 #define TICK_RATE       (1000)
@@ -150,7 +150,7 @@ uint8_t configPipe(uint8_t);
 void configTxAddress(uint8_t *);
 void readpipeAdress(uint8_t);
 void configRxAddress(uint8_t *);
-
+void initializeTimer17();
 
 /* version info functions */
 void VersionPrint(void);

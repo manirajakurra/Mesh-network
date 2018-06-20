@@ -48,6 +48,9 @@ void my_Tick(void);
 /**
 * @brief This function handles System tick timer.
 */
+
+extern TIM_HandleTypeDef    tim17;
+
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
@@ -68,6 +71,11 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /* USER CODE BEGIN 1 */
+
+void TIM1_TRG_COM_TIM17_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&tim17);
+}
 
 void EXTI4_IRQHandler(void)
 {

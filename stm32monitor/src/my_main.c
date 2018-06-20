@@ -14,6 +14,9 @@
 uint8_t sFlag = 0;
 uint8_t txActive = 0;
 uint8_t txStage = 0;
+uint8_t tFlag = 0;
+
+TIM_HandleTypeDef tim17;
 
 char msg[10] = "ABCDEFGHI";
 uint8_t rxNodeID = 0;
@@ -22,10 +25,19 @@ uint8_t txData1[PAYLOAD_LEN] = {99,98,97,96};
 
 uint8_t rxData1[PAYLOAD_LEN] = {199,198,197,196};
 
+uint8_t defaultTxAdrs[5] = {231,231,231,231,231};
+uint8_t defaultRxP1Adrs[5] = {194,194,194,194,194};
+
 uint8_t ackStage = 1;
 
 uint8_t payloadRxdStatus = 0;
+uint8_t dataAck2RceeiveStatus = 0;
+uint8_t intermediateNode = 0;
+uint8_t checkNeighbourNode = 0;
+uint8_t destNodeID = 0;
+uint8_t payloadRxd[PAYLOAD_LEN] = {0,0,0,0};
 
+uint8_t EOT = 0;//end of transmission flag
 
 /* This function is called from the CubeMX generated main.c, after all
  * the HAL peripherals have been initialized. */
@@ -44,6 +56,7 @@ void my_init(void)
   spi_init();
   //configuration of nRF24L01
   config_nrf24l01(Rx);
+  initializeTimer17();
   printf("Configuration done\n\r");
   SET_CE;
   HAL_Delay(1);
@@ -110,10 +123,11 @@ void my_main(void)
  uint8_t txAdrs[5] = {194,194,194,194,211};
 // uint8_t interruptinfo = 0;
   //uint8_t Rx_FIFO_EMPTY_Mask = 0x01;
-
+ static uint8_t nRetries = 0;
   uint8_t i = 0;
   uint8_t spiCmd = 0;
   uint8_t spiData = 0;
+  static uint8_t masterNodeID = 0;
 
   
   uint8_t configStatus = 0;
@@ -123,10 +137,32 @@ void my_main(void)
   
   //config_nrf24l01(Rx);
 
+if(tFlag)
+{
+  printf("\n\n\rTimer Interrupt Occured\n\n\r");
+  tFlag = 0;
+  nRetries++;
+  HAL_TIM_Base_Stop_IT(&tim17);
+  if(nRetries < 3)
+  {
+     ackStage = 1;
+  }
+  else
+  {
+
+     txStage++;
+     if(txStage == 1)
+     ackStage = 1;
+     nRetries = 0;
+    
+  }
+}
+
   //printf("-----sFlag -----\n\r%d\n\r", sFlag);
   if(sFlag)
   {
 sFlag = 0;
+//clearFlags();
   //FIFO_STATUS
   //check if there are more payload
   spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_STATUS;
@@ -138,7 +174,7 @@ sFlag = 0;
   receive_payload_from_spi(rxData, PAYLOAD_LEN);
   printf("-----RxData -----\n\r\n\r");
   for(i = 0; i < PAYLOAD_LEN; i++)
-    printf("%d\n\r", rxData[i]);
+    printf("%x\n\r", rxData[i]);
 
 if(payloadRxdStatus) // rxd payload
 {
@@ -146,13 +182,28 @@ if(payloadRxdStatus) // rxd payload
 printf("\n\n\r-------Configuring data pipe2 RX -------\n\n\r");
 		readpipeAdress(spiCmd);
 
+  for(i = 0; i < PAYLOAD_LEN; i++)
+    payloadRxd[i] = rxData[i];
 
 printf("\n\n\r-------Acknowledgment for payload-------\n\n\r");
 txMode(rxData1);
+payloadRxdStatus = 0;
 
 }
 
-if(rxData[2] == NODE_ID)
+if(dataAck2RceeiveStatus)
+{
+		txData1[0] = 0x05;
+		txData1[1] = NODE_ID;
+		txData1[2] = rxNodeID;
+		txActive = 1;
+		txStage = 4;
+		ackStage = 1;
+    		EOT = 1;
+  		dataAck2RceeiveStatus = 0;
+}
+
+if((rxData[2] == NODE_ID) || (rxData[2] == 0))
  {
  // ackStage = 1;
   switch(rxData[0])
@@ -161,7 +212,13 @@ if(rxData[2] == NODE_ID)
 		sendControlMsg(txData, rxData[1], 0x21);
 		break;
 	case 0x02: txData[3] = 0;
+         	checkNeighbourNode  = 1;
+		masterNodeID = rxData[1];
+		destNodeID = rxData[3];
 		sendControlMsg(txData, rxData[1], 0x22);
+		break;
+	case 0x03: txData[3] = 0;
+		sendControlMsg(txData, destNodeID, 0x01);
 		break;
 	case 0x04: printf("\n\n\r-------Configuring data pipe2-------\n\n\r");
 		configStatus = configPipe(rxData[3]);
@@ -170,35 +227,65 @@ if(rxData[2] == NODE_ID)
                  printf("\n\n\rDone\n\n\r");
 
 		spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_ADDR_P1;
-printf("\n\n\r-------Configuring data pipe2 RX -------\n\n\r");
+		printf("\n\n\r-------Configuring data pipe2 RX -------\n\n\r");
 		readpipeAdress(spiCmd);
 		txData[3] = 0;
 		sendControlMsg(txData, rxData[1], 0x24);
 		payloadRxdStatus = 1;
-printf("\n\n\r-------Configuring data pipe2 TX -------\n\n\r");
+		printf("\n\n\r-------Configuring data pipe2 TX -------\n\n\r");
 		configTxAddress(txAdrs);
-
 		break;
+
+        case 0x05: printf("\n\n\n\n\rEND OF Transmission\n\n\n\r");
+		configRxAddress(defaultRxP1Adrs);
+		//spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_ADDR_P1;
+                configTxAddress(defaultTxAdrs);
+		if(intermediateNode)
+		{
+			  txActive = 1;
+			  ackStage = 1;
+			  txStage = 0;
+			  rxNodeID = destNodeID;
+  			  for(i = 0; i < PAYLOAD_LEN; i++)
+			  txData1[i] = payloadRxd[i]; 			  
+		}
+		break;
+
 	case 0x21: 
-		txActive = 1;
-		txStage = 3;
-		ackStage = 1;
+		HAL_TIM_Base_Stop_IT(&tim17);
+                if(!checkNeighbourNode)
+		{
+			txActive = 1;
+			txStage = 3;
+			ackStage = 1;
+   		}
+		else
+		{
+			intermediateNode = 1;
+			printf("\n\n\n\r This is an intermediate node\n\n\n\r");
+			txData[3] = 0;
+		        sendControlMsg(txData, masterNodeID, 0x23);
+		}
 		break;
 	case 0x22: 
+		HAL_TIM_Base_Stop_IT(&tim17);
+		rxNodeID = rxData[1];
 		txActive = 1;
 		txStage++;
 		ackStage = 1;
 		break;
         case 0x23: 
+		HAL_TIM_Base_Stop_IT(&tim17);
 		txActive = 1;
 		txStage++;
 		ackStage = 1;
 		break;
    	case 0x24:
+		HAL_TIM_Base_Stop_IT(&tim17);
 		configStatus = configPipe(CHANNEL_ADDRESS);
-configRxAddress(txAdrs);
+		configRxAddress(txAdrs);
 		configTxAddress(txAdrs);
-spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_TX_ADDR;
+		spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_TX_ADDR;
 		printf("\n\n\r-------Configuring Adress data pipe2-------\n\n\r");
 		//spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_PW_P2;
 		readpipeAdress(spiCmd);
@@ -229,12 +316,16 @@ printf("\n\n\r----------------STAGE OF TX ----------\n\n\n\r");
   switch(txStage)
   {
     case 0: txData[3] = 0;
+        TIM17->CNT = 0;
+        HAL_TIM_Base_Start_IT(&tim17);
 	sendControlMsg(txData, rxNodeID, 0x01);
 	break;
-    case 1: txData[3] = 0;
+    case 1: txData[3] = rxNodeID;
+        //TIM17->CNT = 0;
+        //HAL_TIM_Base_Start_IT(&tim17);
 	 sendControlMsg(txData, 0x00, 0x02);
         break;
-    case 2: txData[3] = 0;
+    case 2: txData[3] = 0x03;
 	sendControlMsg(txData, rxNodeID, 0x03);
 	break;
     case 3: txData[3] = CHANNEL_ADDRESS;
@@ -242,6 +333,18 @@ printf("\n\n\r----------------STAGE OF TX ----------\n\n\n\r");
 	break;
    case 4: 
 	txMode(txData1);
+	
+	if(EOT)
+	{
+		configRxAddress(defaultRxP1Adrs);
+  
+       	        configTxAddress(defaultTxAdrs);
+		EOT = 0;
+	}
+	else
+	{
+        dataAck2RceeiveStatus = 1;
+	}
         //configPipe(CHANNEL_ADDRESS);
   }
  ackStage = 0;

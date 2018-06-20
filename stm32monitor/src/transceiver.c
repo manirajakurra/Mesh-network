@@ -2,6 +2,7 @@
 #include "stm32f3xx_hal.h"
 #include "common.h"
 
+extern TIM_HandleTypeDef tim17;
 
 uint8_t RxMode()
 {
@@ -52,7 +53,8 @@ printf("\n\n\n\rTX STATUS: %d\n\n\n\r", spiData);
   sFlag =0;
   config_nrf24l01(Rx);
   SET_CE;
-
+  spiData = TIM17->CNT;
+  printf("\n\n\n\rTimer Count : %d\n\n\n\r", spiData);
 
 }
 
@@ -95,11 +97,14 @@ printf("\n\n\n\rTX STATUS: %d\n\n\n\r", spiData);
 ParserReturnVal_t CmdSPIMasterTx(int action)
 {
   extern  uint8_t txActive;
+extern uint8_t txData1[PAYLOAD_LEN];
+uint8_t i = 0;
 extern uint8_t ackStage;
 uint32_t nodeID = 0;
   extern  uint8_t rxNodeID;
 extern uint8_t txStage;
 uint8_t spiCmd =0;
+extern uint8_t EOT;
 
 
   HAL_StatusTypeDef rc;
@@ -137,6 +142,8 @@ spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_TX_ADDR;
 printf("\n\n\n\r P1 PIPE TX   ADress\n\n\r");
 	readpipeAdress(spiCmd);
 
+for(i = 0; i < PAYLOAD_LEN; i++)
+ txData1[i] = 95 + i;
 
 /*	rc = fetch_string_arg(&msg);
 	if(rc)
@@ -145,6 +152,7 @@ printf("\n\n\n\r P1 PIPE TX   ADress\n\n\r");
 	return 0;
 	}
 */
+EOT = 0;
 config_nrf24l01(Rx);
   txActive = 1;
 ackStage = 1;
