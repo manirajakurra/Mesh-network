@@ -320,7 +320,7 @@ printf("Register --- RX_PW_P1\n\r");
 
  }
 
-
+/*
 uint8_t configPipe(uint8_t adress)
 {
  
@@ -330,7 +330,7 @@ uint8_t configPipe(uint8_t adress)
   //EN_RXADDR
   //Enable data pipe 0,1 and 2
   spiCmd = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_EN_RXADDR;
-  spiData = 7; //'00000111'
+  spiData = 3; //'00000111'
   send_data_to_spi(spiCmd, spiData);
   
   //RX_ADDR_P2
@@ -350,6 +350,8 @@ uint8_t configPipe(uint8_t adress)
   }
 return(configStatus);
 }
+
+*/
 
 void configRxAddress(uint8_t * Adrs)
 {

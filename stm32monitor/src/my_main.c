@@ -18,7 +18,7 @@ uint8_t tFlag = 0;
 
 TIM_HandleTypeDef tim17;
 
-char msg[10] = "ABCDEFGHI";
+//char msg[10] = "ABCDEFGHI";
 uint8_t rxNodeID = 0;
 
 uint8_t txData1[PAYLOAD_LEN] = {99,98,97,96};
@@ -119,7 +119,7 @@ void my_main(void)
   //extern uint8_t sFlag;
   uint8_t rxData[PAYLOAD_LEN] = {0};
   uint8_t fifoStatusRx = 0;
-  uint8_t txData[PAYLOAD_LEN] = {21,22,23,24};
+  static uint8_t txData[PAYLOAD_LEN] = {0,0,0,0};
  uint8_t txAdrs[5] = {194,194,194,194,211};
 // uint8_t interruptinfo = 0;
   //uint8_t Rx_FIFO_EMPTY_Mask = 0x01;
@@ -130,7 +130,7 @@ void my_main(void)
   static uint8_t masterNodeID = 0;
 
   
-  uint8_t configStatus = 0;
+  //uint8_t configStatus = 0;
 
   TaskingRun();  /* Run all registered tasks */
   my_Loop();
@@ -143,7 +143,7 @@ if(tFlag)
   tFlag = 0;
   nRetries++;
   HAL_TIM_Base_Stop_IT(&tim17);
-  if(nRetries < 3)
+  if(nRetries < 2)
   {
      ackStage = 1;
   }
@@ -209,22 +209,35 @@ if((rxData[2] == NODE_ID) || (rxData[2] == 0))
   switch(rxData[0])
   {
 	case 0x01: txData[3] = 0;
-		sendControlMsg(txData, rxData[1], 0x21);
+		txData[0] = 0x21;
+		txData[1] = NODE_ID;
+		txData[2] = rxData[1];		
+		txMode(txData);
+		//sendControlMsg(txData, rxData[1], 0x21);
 		break;
 	case 0x02: txData[3] = 0;
-         	checkNeighbourNode  = 1;
-		masterNodeID = rxData[1];
-		destNodeID = rxData[3];
 		sendControlMsg(txData, rxData[1], 0x22);
 		break;
 	case 0x03: txData[3] = 0;
-		sendControlMsg(txData, destNodeID, 0x01);
+         	
+		masterNodeID = rxData[1];
+		destNodeID = rxData[3];
+		
+		printf("\n\n\n\r-----------Entered Req ID 0x03--------------\n\n\n\r");
+		if(destNodeID != NODE_ID)
+		{
+		   sendControlMsg(txData, destNodeID, 0x01);
+		   checkNeighbourNode  = 1;
+		}
+		else
+		{
+		   sendControlMsg(txData, masterNodeID, 0x23);
+		   checkNeighbourNode  = 0;
+		}
 		break;
 	case 0x04: printf("\n\n\r-------Configuring data pipe2-------\n\n\r");
-		configStatus = configPipe(rxData[3]);
+		//configStatus = configPipe(rxData[3]);
                 configRxAddress(txAdrs);
-                if(configStatus)
-                 printf("\n\n\rDone\n\n\r");
 
 		spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_ADDR_P1;
 		printf("\n\n\r-------Configuring data pipe2 RX -------\n\n\r");
@@ -261,11 +274,12 @@ if((rxData[2] == NODE_ID) || (rxData[2] == 0))
    		}
 		else
 		{
-			intermediateNode = 1;
+			intermediateNode = 1;			
 			printf("\n\n\n\r This is an intermediate node\n\n\n\r");
 			txData[3] = 0;
 		        sendControlMsg(txData, masterNodeID, 0x23);
 		}
+		
 		break;
 	case 0x22: 
 		HAL_TIM_Base_Stop_IT(&tim17);
@@ -282,7 +296,7 @@ if((rxData[2] == NODE_ID) || (rxData[2] == 0))
 		break;
    	case 0x24:
 		HAL_TIM_Base_Stop_IT(&tim17);
-		configStatus = configPipe(CHANNEL_ADDRESS);
+		//configStatus = configPipe(CHANNEL_ADDRESS);
 		configRxAddress(txAdrs);
 		configTxAddress(txAdrs);
 		spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_TX_ADDR;
@@ -320,12 +334,12 @@ printf("\n\n\r----------------STAGE OF TX ----------\n\n\n\r");
         HAL_TIM_Base_Start_IT(&tim17);
 	sendControlMsg(txData, rxNodeID, 0x01);
 	break;
-    case 1: txData[3] = rxNodeID;
+    case 1: txData[3] = 0;
         //TIM17->CNT = 0;
         //HAL_TIM_Base_Start_IT(&tim17);
 	 sendControlMsg(txData, 0x00, 0x02);
         break;
-    case 2: txData[3] = 0x03;
+    case 2: txData[3] = destNodeID;
 	sendControlMsg(txData, rxNodeID, 0x03);
 	break;
     case 3: txData[3] = CHANNEL_ADDRESS;
