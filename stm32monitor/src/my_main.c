@@ -154,8 +154,19 @@ if(tFlag)
      if(txStage == 1)
      ackStage = 1;
      nRetries = 0;
+     checkNeighbourNode = 0;
     
   }
+
+// to resend when the message received is not correct format
+ if(checkNeighbourNode)
+ {
+	
+          	   TIM17->CNT = 0;
+        	   HAL_TIM_Base_Start_IT(&tim17);
+		   sendControlMsg(txData, destNodeID, 0x01);
+ }
+
 }
 
   //printf("-----sFlag -----\n\r%d\n\r", sFlag);
@@ -171,6 +182,14 @@ sFlag = 0;
   if(!fifoStatusRx)
  {
   //RESET_CE;
+
+  spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_FIFO_STATUS;
+  spiData = 0; 
+ // while((receive_data_from_spi(spiCmd, spiData) & 0x0E) == 0x0E);
+  spiData = receive_data_from_spi(spiCmd, spiData);
+
+  printf("\n\n\n\r--------RX FIFO STATUS -------------\n%d\n\n\n\r", spiData);
+
   receive_payload_from_spi(rxData, PAYLOAD_LEN);
   printf("-----RxData -----\n\r\n\r");
   for(i = 0; i < PAYLOAD_LEN; i++)
@@ -209,11 +228,7 @@ if((rxData[2] == NODE_ID) || (rxData[2] == 0))
   switch(rxData[0])
   {
 	case 0x01: txData[3] = 0;
-		txData[0] = 0x21;
-		txData[1] = NODE_ID;
-		txData[2] = rxData[1];		
-		txMode(txData);
-		//sendControlMsg(txData, rxData[1], 0x21);
+		sendControlMsg(txData, rxData[1], 0x21);
 		break;
 	case 0x02: txData[3] = 0;
 		sendControlMsg(txData, rxData[1], 0x22);
@@ -226,6 +241,8 @@ if((rxData[2] == NODE_ID) || (rxData[2] == 0))
 		printf("\n\n\n\r-----------Entered Req ID 0x03--------------\n\n\n\r");
 		if(destNodeID != NODE_ID)
 		{
+        	   TIM17->CNT = 0;
+        	   HAL_TIM_Base_Start_IT(&tim17);
 		   sendControlMsg(txData, destNodeID, 0x01);
 		   checkNeighbourNode  = 1;
 		}
@@ -260,7 +277,8 @@ if((rxData[2] == NODE_ID) || (rxData[2] == 0))
 			  txStage = 0;
 			  rxNodeID = destNodeID;
   			  for(i = 0; i < PAYLOAD_LEN; i++)
-			  txData1[i] = payloadRxd[i]; 			  
+			  txData1[i] = payloadRxd[i]; 	
+   		          intermediateNode = 0;		  
 		}
 		break;
 
@@ -274,24 +292,24 @@ if((rxData[2] == NODE_ID) || (rxData[2] == 0))
    		}
 		else
 		{
-			intermediateNode = 1;			
+			intermediateNode = 1;
+  	                checkNeighbourNode = 0;
 			printf("\n\n\n\r This is an intermediate node\n\n\n\r");
 			txData[3] = 0;
 		        sendControlMsg(txData, masterNodeID, 0x23);
 		}
-		
 		break;
 	case 0x22: 
 		HAL_TIM_Base_Stop_IT(&tim17);
 		rxNodeID = rxData[1];
 		txActive = 1;
-		txStage++;
+		txStage = 2;
 		ackStage = 1;
 		break;
         case 0x23: 
 		HAL_TIM_Base_Stop_IT(&tim17);
 		txActive = 1;
-		txStage++;
+		txStage = 3;
 		ackStage = 1;
 		break;
    	case 0x24:
@@ -314,7 +332,6 @@ if((rxData[2] == NODE_ID) || (rxData[2] == 0))
 
 
 
-
  }
  fifoStatusRx = 1;
 
@@ -326,7 +343,7 @@ if((rxData[2] == NODE_ID) || (rxData[2] == 0))
 if(txActive && ackStage)
 {
 
-printf("\n\n\r----------------STAGE OF TX ----------\n\n\n\r");
+printf("\n\n\r----------------STAGE OF TX ---------- %d\n\n\n\r", txStage);
   switch(txStage)
   {
     case 0: txData[3] = 0;
@@ -354,6 +371,8 @@ printf("\n\n\r----------------STAGE OF TX ----------\n\n\n\r");
   
        	        configTxAddress(defaultTxAdrs);
 		EOT = 0;
+		txStage = 0;
+  	        txActive = 0;
 	}
 	else
 	{

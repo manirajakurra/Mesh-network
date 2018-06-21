@@ -106,8 +106,6 @@ extern uint8_t txStage;
 uint8_t spiCmd =0;
 extern uint8_t EOT;
 extern uint8_t destNodeID;
-extern uint8_t checkNeighbourNode;
-extern uint8_t intermediateNode; 
 
   HAL_StatusTypeDef rc;
 //char **s = msg;
@@ -157,8 +155,6 @@ for(i = 0; i < PAYLOAD_LEN; i++)
 
 destNodeID = rxNodeID;
 EOT = 0;
-checkNeighbourNode = 0;
-intermediateNode = 0;
 //config_nrf24l01(Rx);
   txActive = 1;
 ackStage = 1;
