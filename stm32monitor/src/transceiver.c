@@ -3,6 +3,7 @@
 #include "common.h"
 
 extern TIM_HandleTypeDef tim17;
+extern TIM_HandleTypeDef htim2;
 
 uint8_t RxMode()
 {
@@ -177,5 +178,27 @@ ParserReturnVal_t CmdSPIMasterRx(int action)
 }
 
 ADD_CMD("SPI_MASTER_RX",CmdSPIMasterRx,"This is used for Receiving--Slave Node")
+
+
+ParserReturnVal_t CmdTestTimer2(int action)
+{
+  HAL_StatusTypeDef rc;
+  if(action==CMD_SHORT_HELP) return CmdReturnOk;
+
+  rc = fetch_uint32_arg(&timerDelay);
+  if(rc)
+  {
+    printf("\n\n\rEnter Node ID of the receiver\n\r");
+    return 0;
+  }
+
+  initializeTimer2();
+  HAL_TIM_Base_Stop_IT(&htim2);
+  HAL_TIM_Base_Start_IT(&htim2);
+
+  return CmdReturnOk;
+}
+
+ADD_CMD("timer2",CmdTestTimer2,"Test the working of timer2")
 
 

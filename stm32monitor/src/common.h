@@ -134,6 +134,10 @@ int32_t TaskKill(int32_t id);
 int32_t TaskSwitcher(void);
  int32_t TaskNext(void);
 
+
+uint32_t timerDelay;
+
+
 uint8_t RxMode();
 void GPIO_Init(void);
 void spi_init(void);
@@ -151,6 +155,8 @@ void configTxAddress(uint8_t *);
 void readpipeAdress(uint8_t);
 void configRxAddress(uint8_t *);
 void initializeTimer17();
+void initializeTimer2();
+void msdelay(unsigned int);
 
 /* version info functions */
 void VersionPrint(void);

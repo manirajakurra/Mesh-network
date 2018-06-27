@@ -17,6 +17,7 @@ uint8_t txStage = 0;
 uint8_t tFlag = 0;
 
 TIM_HandleTypeDef tim17;
+TIM_HandleTypeDef htim2;
 
 //char msg[10] = "ABCDEFGHI";
 uint8_t rxNodeID = 0;
@@ -57,6 +58,7 @@ void my_init(void)
   //configuration of nRF24L01
   config_nrf24l01(Rx);
   initializeTimer17();
+  initializeTimer2();
   printf("Configuration done\n\r");
   SET_CE;
   HAL_Delay(1);
@@ -231,6 +233,9 @@ if((rxData[2] == NODE_ID) || (rxData[2] == 0))
 		sendControlMsg(txData, rxData[1], 0x21);
 		break;
 	case 0x02: txData[3] = 0;
+        	//printf("\n\n\n\r-----------Entered Req ID 0x02--------------\n\n\n\r");
+		msdelay((NODE_ID));
+                
 		sendControlMsg(txData, rxData[1], 0x22);
 		break;
 	case 0x03: txData[3] = 0;
@@ -301,6 +306,8 @@ if((rxData[2] == NODE_ID) || (rxData[2] == 0))
 		break;
 	case 0x22: 
 		HAL_TIM_Base_Stop_IT(&tim17);
+                msdelay(1000);
+                
 		rxNodeID = rxData[1];
 		txActive = 1;
 		txStage = 2;
