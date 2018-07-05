@@ -59,7 +59,7 @@ printf("\n\n\n\rTX STATUS: %d\n\n\n\r", spiData);
 
 }
 
-void txMode(uint8_t *txData)
+void txMode(uint8_t *txData, uint8_t pLength)
 {
 
   uint8_t spiCmd = 0;
@@ -73,7 +73,7 @@ void txMode(uint8_t *txData)
   /* Infinite loop */
   
 
-      send_payload_to_spi(txData, PAYLOAD_LEN);
+      send_payload_to_spi(txData, pLength);
       SET_CE;
        spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_STATUS;
   spiData = 0; //'01001110'
@@ -107,6 +107,9 @@ extern uint8_t txStage;
 uint8_t spiCmd =0;
 extern uint8_t EOT;
 extern uint8_t destNodeID;
+extern uint8_t *txDat;
+char *inputString;
+extern uint8_t strLength;
 
   HAL_StatusTypeDef rc;
 //char **s = msg;
@@ -120,6 +123,14 @@ extern uint8_t destNodeID;
   //configuration of nRF24L01
   //txMode(txData);
 	rc = fetch_uint32_arg(&nodeID);
+	fetch_string_arg(&inputString);
+	strLength= strlen(inputString);
+	txDat = (uint8_t *)malloc(strLength);
+        for (i = 0;i < strLength; i++) {
+        txDat[i] = (uint8_t)inputString[i];
+	printf("the value is %d", txDat[i]);
+	}
+	
 	if(rc)
 	{
 	printf("\n\n\rEnter Node ID of the receiver\n\r");
@@ -127,7 +138,7 @@ extern uint8_t destNodeID;
 	}
         
 	rxNodeID = (uint8_t) nodeID;
-
+       
 spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_ADDR_P1;
 printf("\n\n\n\r P1 PIPE ADress\n\n\r");
 	readpipeAdress(spiCmd);

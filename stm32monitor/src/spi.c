@@ -5,6 +5,31 @@
 
 SPI_HandleTypeDef SpiHandle;
 
+void configforDypd() 
+
+{
+  uint8_t spiCmd = 0;
+  uint8_t spiData = 0;
+  spiCmd  = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_CONFIG;
+  spiData = 0x38;
+  send_data_to_spi(spiCmd, spiData);
+  // Activate 
+
+  spiCmd  = _NRF24L01P_SPI_CMD_ACTIVATE;
+  spiData = 0x73;
+  send_data_to_spi(spiCmd, spiData);
+
+  // feature 
+
+  spiCmd  =  _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_FEATURE;
+  spiData = 0x04; // 00000100
+  send_data_to_spi(spiCmd, spiData);
+  // DYPD
+  spiCmd = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_DYNPD;
+  spiData = 0x07; //00000111;
+  send_data_to_spi(spiCmd, spiData);
+}
+
 void GPIO_Init(void)
 {
 
@@ -160,11 +185,18 @@ void send_payload_to_spi(uint8_t * payload, uint8_t payloadLen)
  }
 
 
-void receive_payload_from_spi(uint8_t * payload, uint8_t payloadLen)
+uint8_t receive_payload_from_spi(uint8_t * payload, uint8_t payloadLen)
  {
   uint8_t spiCmd = 0;
+ 
   uint8_t spiData[payloadLen];
   uint8_t i= 0;
+  
+  spiCmd = _NRF24L01P_SPI_CMD_R_RX_PL_WID;
+  payloadLen = receive_data_from_spi(spiCmd, spiData[0]); 
+
+  printf("\n\n\n\rPayload Length %d\n\n\n\n\r", payloadLen); 
+
   spiCmd = _NRF24L01P_SPI_CMD_RD_RX_PAYLOAD;
   //spiData = 0;
   //spiData = receive_data_from_spi(spiCmd, spiData);
@@ -189,6 +221,8 @@ void receive_payload_from_spi(uint8_t * payload, uint8_t payloadLen)
    printf("PL %d %d\n\r", *(payload+i), i);
   }
     SET_CSN;
+
+ return(payloadLen);
  }
 
  void config_nrf24l01(uint8_t Mode)

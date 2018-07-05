@@ -7,12 +7,14 @@
 
 #include <stdint.h>
 #include <time.h>
+#include "stdlib.h"
+#include "string.h"
 
 
 /* Include HAL definitions */
 #include "stm32f3xx_hal.h"
 
-#define NODE_ID 0x03
+#define NODE_ID 0x02
 
 
 #define TICK_RATE       (1000)
@@ -146,8 +148,8 @@ uint8_t receive_data_from_spi(uint8_t, uint8_t);
 void config_nrf24l01(uint8_t);
 extern uint8_t sFlag;
 void send_payload_to_spi(uint8_t *, uint8_t);
-void receive_payload_from_spi(uint8_t *, uint8_t);
-void txMode(uint8_t *);
+uint8_t receive_payload_from_spi(uint8_t *, uint8_t);
+void txMode(uint8_t *, uint8_t);
 void sendControlMsg(uint8_t *, uint8_t, uint8_t);
 uint8_t configPipe(uint8_t);
 
@@ -157,6 +159,27 @@ void configRxAddress(uint8_t *);
 void initializeTimer17();
 void initializeTimer2();
 void msdelay(unsigned int);
+
+typedef struct NodeList
+{
+
+	uint8_t NodeID;
+	uint8_t Count;
+	uint8_t pathSourceID;
+	uint8_t ActiveStatus;
+	struct NodeList *NextNode;
+
+}routeTable;
+
+void addToTable(routeTable **, uint8_t, uint8_t, uint8_t);
+void printTable(routeTable *);
+void extractNeighborNodeInfo(uint8_t *, routeTable **);
+uint8_t packBeacon(uint8_t *, routeTable *);
+
+void configforDypd() ;
+
+#define ACTIVE 1
+#define INACTIVE 0
 
 /* version info functions */
 void VersionPrint(void);

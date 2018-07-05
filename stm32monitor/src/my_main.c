@@ -15,6 +15,7 @@ uint8_t sFlag = 0;
 uint8_t txActive = 0;
 uint8_t txStage = 0;
 uint8_t tFlag = 0;
+uint8_t strLength = 0;
 
 TIM_HandleTypeDef tim17;
 TIM_HandleTypeDef htim2;
@@ -37,8 +38,13 @@ uint8_t intermediateNode = 0;
 uint8_t checkNeighbourNode = 0;
 uint8_t destNodeID = 0;
 uint8_t payloadRxd[PAYLOAD_LEN] = {0,0,0,0};
+uint8_t *txDat;
 
 uint8_t EOT = 0;//end of transmission flag
+
+
+routeTable *pHead = NULL;
+routeTable *newNode = NULL;
 
 /* This function is called from the CubeMX generated main.c, after all
  * the HAL peripherals have been initialized. */
@@ -56,6 +62,8 @@ void my_init(void)
   GPIO_Init();
   spi_init();
   //configuration of nRF24L01
+  printf("\n\n\n\rConfigured NRF24L01 for dynamic payload\n\n\n\n\r");
+  configforDypd();
   config_nrf24l01(Rx);
   initializeTimer17();
   initializeTimer2();
@@ -103,14 +111,7 @@ void clearFlags()
   spiCmd = _NRF24L01P_SPI_CMD_FLUSH_RX;
   spiData = 0; //'00000000'
   send_data_to_spi(spiCmd, spiData);
-/*
-  //FIFO_STATUS
-  //check if there are more payload
-  spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_FIFO_STATUS;
-  spiData = 0; //'01001110'
-  fifoStatus = receive_data_from_spi(spiCmd, spiData) & RX_FIFO_EMPTY_MASK;
-  //printf("FIFO STATUS %d\n\r", fifoStatus);
-*/
+
 }
 
 
@@ -130,6 +131,7 @@ void my_main(void)
   uint8_t spiCmd = 0;
   uint8_t spiData = 0;
   static uint8_t masterNodeID = 0;
+  uint8_t payloadLen;
 
   
   //uint8_t configStatus = 0;
@@ -192,9 +194,9 @@ sFlag = 0;
 
   printf("\n\n\n\r--------RX FIFO STATUS -------------\n%d\n\n\n\r", spiData);
 
-  receive_payload_from_spi(rxData, PAYLOAD_LEN);
+ payloadLen = receive_payload_from_spi(rxData, PAYLOAD_LEN);
   printf("-----RxData -----\n\r\n\r");
-  for(i = 0; i < PAYLOAD_LEN; i++)
+  for(i = 0; i < payloadLen; i++)
     printf("%x\n\r", rxData[i]);
 
 if(payloadRxdStatus) // rxd payload
@@ -207,16 +209,16 @@ printf("\n\n\r-------Configuring data pipe2 RX -------\n\n\r");
     payloadRxd[i] = rxData[i];
 
 printf("\n\n\r-------Acknowledgment for payload-------\n\n\r");
-txMode(rxData1);
+txMode(rxData1, PAYLOAD_LEN);
 payloadRxdStatus = 0;
 
 }
 
 if(dataAck2RceeiveStatus)
 {
-		txData1[0] = 0x05;
-		txData1[1] = NODE_ID;
-		txData1[2] = rxNodeID;
+		txDat[0] = 0x05;
+		txDat[1] = NODE_ID;
+		txDat[2] = rxNodeID;
 		txActive = 1;
 		txStage = 4;
 		ackStage = 1;
@@ -224,7 +226,15 @@ if(dataAck2RceeiveStatus)
   		dataAck2RceeiveStatus = 0;
 }
 
-if((rxData[2] == NODE_ID) || (rxData[2] == 0))
+if(rxData[0] == 0x06)
+{
+
+	//update routing table
+	extractNeighborNodeInfo(rxData, &pHead);
+  
+
+}
+else if((rxData[2] == NODE_ID) || (rxData[2] == 0))
  {
  // ackStage = 1;
   switch(rxData[0])
@@ -370,7 +380,7 @@ printf("\n\n\r----------------STAGE OF TX ---------- %d\n\n\n\r", txStage);
         sendControlMsg(txData, rxNodeID, 0x04);
 	break;
    case 4: 
-	txMode(txData1);
+	txMode(txDat, strLength);
 	
 	if(EOT)
 	{
