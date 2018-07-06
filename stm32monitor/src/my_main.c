@@ -16,6 +16,7 @@ uint8_t txActive = 0;
 uint8_t txStage = 0;
 uint8_t tFlag = 0;
 uint8_t strLength = 0;
+volatile uint8_t broadcastFlag;
 
 TIM_HandleTypeDef tim17;
 TIM_HandleTypeDef htim2;
@@ -67,6 +68,7 @@ void my_init(void)
   config_nrf24l01(Rx);
   initializeTimer17();
   initializeTimer2();
+  startToBroadcastInfo();
   printf("Configuration done\n\r");
   SET_CE;
   HAL_Delay(1);
@@ -132,14 +134,38 @@ void my_main(void)
   uint8_t spiData = 0;
   static uint8_t masterNodeID = 0;
   uint8_t payloadLen;
-
+  char *rxdString;
+ 
+  	uint8_t beaconLen = 0;
   
+  	uint8_t beaconPayload[32] = {0};
+
   //uint8_t configStatus = 0;
 
   TaskingRun();  /* Run all registered tasks */
   my_Loop();
   
   //config_nrf24l01(Rx);
+
+
+if(broadcastFlag)
+{
+
+	broadcastFlag = 0;
+        HAL_TIM_Base_Start_IT(&htim2);
+	printf("\n\n\n\r******-----------Broadcast Beacon----------********\n\n\n\n\r");
+
+  	beaconLen = packBeacon(beaconPayload, pHead);
+	
+	//deleteInActiveNode(pHead);
+
+	//deleteInActiveNode(pHead);
+	changeNeighborNodeStatus(pHead);
+
+	txMode(beaconPayload, beaconLen);  
+}
+
+
 
 if(tFlag)
 {
@@ -195,17 +221,22 @@ sFlag = 0;
   printf("\n\n\n\r--------RX FIFO STATUS -------------\n%d\n\n\n\r", spiData);
 
  payloadLen = receive_payload_from_spi(rxData, PAYLOAD_LEN);
-  printf("-----RxData -----\n\r\n\r");
-  for(i = 0; i < payloadLen; i++)
-    printf("%x\n\r", rxData[i]);
+
+ rxdString = (char *)malloc(payloadLen+1);
+
+ 
 
 if(payloadRxdStatus) // rxd payload
 {
-		spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_ADDR_P1;
-printf("\n\n\r-------Configuring data pipe2 RX -------\n\n\r");
-		readpipeAdress(spiCmd);
+   // printf("-----Received Message is-----\n\r\n\r");
+  for(i = 0; i < payloadLen; i++)
+   *(rxdString + i) = (char) *(rxData + i);
 
-  for(i = 0; i < PAYLOAD_LEN; i++)
+  *(rxdString + i) = '\0';
+  printf("Received Message is : %s\n\r\n\r", rxdString);
+ // printf("\n\n\r%s\n\n\n\r", rxdString);
+
+  for(i = 0; i < payloadLen; i++)
     payloadRxd[i] = rxData[i];
 
 printf("\n\n\r-------Acknowledgment for payload-------\n\n\r");
@@ -219,6 +250,7 @@ if(dataAck2RceeiveStatus)
 		txDat[0] = 0x05;
 		txDat[1] = NODE_ID;
 		txDat[2] = rxNodeID;
+  		strLength = 4;
 		txActive = 1;
 		txStage = 4;
 		ackStage = 1;
@@ -244,7 +276,7 @@ else if((rxData[2] == NODE_ID) || (rxData[2] == 0))
 		break;
 	case 0x02: txData[3] = 0;
         	//printf("\n\n\n\r-----------Entered Req ID 0x02--------------\n\n\n\r");
-		msdelay((NODE_ID));
+		//msdelay((NODE_ID));
                 
 		sendControlMsg(txData, rxData[1], 0x22);
 		break;
@@ -283,6 +315,7 @@ else if((rxData[2] == NODE_ID) || (rxData[2] == 0))
 
         case 0x05: printf("\n\n\n\n\rEND OF Transmission\n\n\n\r");
 		configRxAddress(defaultRxP1Adrs);
+     		free(rxdString);
 		//spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_RX_ADDR_P1;
                 configTxAddress(defaultTxAdrs);
 		if(intermediateNode)
@@ -316,7 +349,7 @@ else if((rxData[2] == NODE_ID) || (rxData[2] == 0))
 		break;
 	case 0x22: 
 		HAL_TIM_Base_Stop_IT(&tim17);
-                msdelay(1000);
+                //msdelay(1000);
                 
 		rxNodeID = rxData[1];
 		txActive = 1;
@@ -390,6 +423,9 @@ printf("\n\n\r----------------STAGE OF TX ---------- %d\n\n\n\r", txStage);
 		EOT = 0;
 		txStage = 0;
   	        txActive = 0;
+		free(txDat);
+		printf("\n\n\n\r End Of Transmission \n\n\n\r");
+
 	}
 	else
 	{

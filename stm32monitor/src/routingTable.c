@@ -134,13 +134,14 @@ void deleteInActiveNode(routeTable *pHead)
 
         while((pHead->ActiveStatus == INACTIVE) && (pHead != NULL))
 	{
-		prevNode = pHead->NextNode;
-		free(pHead);
-		pHead = prevNode;
+		pHead = pHead->NextNode;
+		free(prevNode);
+		prevNode = pHead;
 
 		if(prevNode->NextNode != NULL)
 		{
 			tempNode = prevNode->NextNode;
+			
 		}
 		else
 		{	
@@ -217,6 +218,7 @@ ParserReturnVal_t sendBeacon(int mode)
   	beaconLen = packBeacon(beaconPayload, pHead);
 	
 	//deleteInActiveNode(pHead);
+	//changeNeighborNodeStatus(pHead);
 	txMode(beaconPayload, beaconLen);  
 	return CmdReturnOk;
 

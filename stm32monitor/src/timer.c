@@ -6,7 +6,7 @@
 extern TIM_HandleTypeDef tim17;
 extern TIM_HandleTypeDef htim2;
 extern uint8_t tFlag;
-volatile uint8_t delayFlag;
+extern volatile uint8_t broadcastFlag;
 
 static int idelay = 0;
 
@@ -40,7 +40,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	HAL_GPIO_TogglePin(LD2_GPIO_Port,LD2_Pin);
 	printf("\n\n\r Timer2\n\n\r");
         idelay = 0;
-	delayFlag = 1;
+	broadcastFlag = 1;
     }
  }
 
@@ -97,13 +97,13 @@ void initializeTimer2()
 
 
 
-void msdelay(unsigned int delayVal)
+void startToBroadcastInfo()
 {
  //printf("\n\n\n\r-----------Entered MSDELAY--------------%d\n\n\n\r", delayVal);
- timerDelay = delayVal;
+ timerDelay = 30000;
  HAL_TIM_Base_Start_IT(&htim2);
- while(!delayFlag);
- delayFlag = 0;
+ //while(!delayFlag);
+ broadcastFlag = 0;
 }
 
 

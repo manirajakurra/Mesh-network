@@ -155,6 +155,7 @@ void send_payload_to_spi(uint8_t * payload, uint8_t payloadLen)
 	HAL_SPI_Transmit(&SpiHandle, &spiCmd, 1, 0);
     HAL_SPI_Transmit(&SpiHandle, &spiData, 1, 0);
     printf("spiData %d\n\r", spiData);
+    //msdelay(1);
     //HAL_SPI_Transmit(&SpiHandle, &spiData, 1, 0);
     SET_CSN;
     //RESET_CE;
@@ -174,12 +175,15 @@ void send_payload_to_spi(uint8_t * payload, uint8_t payloadLen)
     HAL_SPI_Receive(&SpiHandle, &spiCmd, 1, 0);
    // HAL_Delay(1);
    printf("Status %d\n\r", spiData);
+	
     HAL_SPI_Receive(&SpiHandle, &spiData, 1, 0);
 //HAL_Delay(1);    
     printf("Status %d\n\r", spiData);
+    
     HAL_SPI_Receive(&SpiHandle, &spiData, 1, 0);
 //HAL_Delay(1);    
     printf("Status %d\n\r", spiData);
+  
     SET_CSN;
 	return spiData;
  }
@@ -194,6 +198,8 @@ uint8_t receive_payload_from_spi(uint8_t * payload, uint8_t payloadLen)
   
   spiCmd = _NRF24L01P_SPI_CMD_R_RX_PL_WID;
   payloadLen = receive_data_from_spi(spiCmd, spiData[0]); 
+
+  //payload = (uint8_t *) malloc(payloadLen);
 
   printf("\n\n\n\rPayload Length %d\n\n\n\n\r", payloadLen); 
 
@@ -354,38 +360,6 @@ printf("Register --- RX_PW_P1\n\r");
 
  }
 
-/*
-uint8_t configPipe(uint8_t adress)
-{
- 
-  uint8_t configStatus = 0;
-	uint8_t spiCmd = 0;
-	uint8_t spiData = 0;
-  //EN_RXADDR
-  //Enable data pipe 0,1 and 2
-  spiCmd = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_EN_RXADDR;
-  spiData = 3; //'00000111'
-  send_data_to_spi(spiCmd, spiData);
-  
-  //RX_ADDR_P2
-  spiCmd = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_RX_ADDR_P2;
-  spiData = adress; //Address configured
-  send_data_to_spi(spiCmd, spiData);
-
-  printf("Register --- RX_PW_P0\n\r");
-  //to read the content of the CONFIG register in nrf24L01 module
-  spiCmd = _NRF24L01P_SPI_CMD_RD_REG | _NRF24L01P_REG_RX_ADDR_P2;
-  spiData = 0; //'00000000'
-  spiData = receive_data_from_spi(spiCmd, spiData);
-
-  if(spiData == adress)
-  {
-   	configStatus = 1;
-  }
-return(configStatus);
-}
-
-*/
 
 void configRxAddress(uint8_t * Adrs)
 {

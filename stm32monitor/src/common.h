@@ -14,7 +14,7 @@
 /* Include HAL definitions */
 #include "stm32f3xx_hal.h"
 
-#define NODE_ID 0x02
+#define NODE_ID 0x01
 
 
 #define TICK_RATE       (1000)
@@ -158,7 +158,7 @@ void readpipeAdress(uint8_t);
 void configRxAddress(uint8_t *);
 void initializeTimer17();
 void initializeTimer2();
-void msdelay(unsigned int);
+void startToBroadcastInfo();
 
 typedef struct NodeList
 {
@@ -175,6 +175,8 @@ void addToTable(routeTable **, uint8_t, uint8_t, uint8_t);
 void printTable(routeTable *);
 void extractNeighborNodeInfo(uint8_t *, routeTable **);
 uint8_t packBeacon(uint8_t *, routeTable *);
+void deleteInActiveNode(routeTable *);
+void changeNeighborNodeStatus(routeTable *);
 
 void configforDypd() ;
 
