@@ -13,19 +13,20 @@
 extern routeTable *pHead;
 extern routeTable *newNode;
 
-void addToTable(routeTable **pHead, uint8_t NodeID, uint8_t Count, uint8_t pathSourceID)
+void addToTable(routeTable **pHead, uint8_t NodeID, uint8_t Count, uint8_t pSourceID,uint8_t sourceID)
 {
 	uint8_t nodeAlreadyPresent = 0;
 	routeTable *tempNode;
 	tempNode = *pHead;
-	
+
 	if(*pHead == NULL)
 	{
 		// allocate memory to new node
+		printf("\n\n\rITS NULL\n\n\n\r");
 		newNode = (routeTable *)malloc(sizeof(routeTable));
 		newNode->NodeID = NodeID;
 		newNode->Count = Count;
-		newNode->pathSourceID = pathSourceID;
+		newNode->pathSourceID = sourceID;
 		newNode->ActiveStatus = ACTIVE;
 		newNode->NextNode = NULL;
 		*pHead = newNode;
@@ -44,7 +45,7 @@ void addToTable(routeTable **pHead, uint8_t NodeID, uint8_t Count, uint8_t pathS
 					{
 						//least distant path found, update the info
 						tempNode->Count = Count;
-						tempNode->pathSourceID = pathSourceID;
+						tempNode->pathSourceID = sourceID;
 						break;
 					}
 					else
@@ -55,24 +56,28 @@ void addToTable(routeTable **pHead, uint8_t NodeID, uint8_t Count, uint8_t pathS
 				}
 				else
 				{
-					tempNode->ActiveStatus = ACTIVE;
-					tempNode->Count = Count;
-					tempNode->pathSourceID = pathSourceID;
+					if(pSourceID != NODE_ID)
+					{
+						tempNode->ActiveStatus = ACTIVE;
+						tempNode->Count = Count;
+						tempNode->pathSourceID = sourceID;
+					}
 					break;
-				}	
+				}
 			}
 			else
 			{
 				tempNode = tempNode->NextNode;
+				//nodeAlreadyPresent = 0;
 			}
 		}
-		if(!nodeAlreadyPresent)
+		if(!nodeAlreadyPresent && (pSourceID != NODE_ID))
 		{
 			//Enter new node info
 			newNode = (routeTable *)malloc(sizeof(routeTable));
 			newNode->NodeID = NodeID;
 			newNode->Count = Count;
-			newNode->pathSourceID = pathSourceID;
+			newNode->pathSourceID = sourceID;
 			newNode->ActiveStatus = ACTIVE;
 			newNode->NextNode = *pHead;
 			*pHead = newNode;
@@ -98,13 +103,13 @@ void printTable(routeTable *pHead)
 
 		while (tempNode != NULL)
 		{
-			
+
 			printf("%d  ",tempNode->NodeID);
 			printf("%d  ",tempNode->Count);
 			printf("%d  ",tempNode->pathSourceID);
 			printf("%d  \n\r",tempNode->ActiveStatus);
 			tempNode = tempNode->NextNode;
-			
+
 		}
 		printf("\n\n\r-----------------------------------------------------------------\n\n\n\r");
 	}
@@ -113,7 +118,7 @@ void printTable(routeTable *pHead)
 void changeNeighborNodeStatus(routeTable *pHead)
 {
 
-  	routeTable *tempNode;
+	routeTable *tempNode;
 	tempNode = pHead;
 	while(tempNode != NULL)
 	{
@@ -123,6 +128,28 @@ void changeNeighborNodeStatus(routeTable *pHead)
 
 }
 
+uint8_t searchNodeInTable(routeTable *pHead, uint8_t ID)
+{
+	routeTable *tempNode;
+	uint8_t searchStatus = 0;	
+	tempNode = pHead;
+
+	while(tempNode != NULL)
+	{
+		if(tempNode->NodeID == ID)
+		{
+			searchStatus = tempNode->pathSourceID;
+			break;
+		}
+		else
+		{
+			tempNode = tempNode->NextNode;
+		}
+	}
+
+	return(searchStatus);
+}
+
 
 void deleteInActiveNode(routeTable *pHead)
 {
@@ -130,9 +157,17 @@ void deleteInActiveNode(routeTable *pHead)
 	routeTable *prevNode;
 
 	prevNode = pHead;
-	tempNode = prevNode->NextNode;
 
-        while((pHead->ActiveStatus == INACTIVE) && (pHead != NULL))
+	if(prevNode != NULL)
+	{
+		tempNode = prevNode->NextNode;
+	}
+	else
+	{
+		tempNode = NULL;
+	}
+
+	while((pHead->ActiveStatus == INACTIVE) && (pHead != NULL))
 	{
 		pHead = pHead->NextNode;
 		free(prevNode);
@@ -141,16 +176,16 @@ void deleteInActiveNode(routeTable *pHead)
 		if(prevNode->NextNode != NULL)
 		{
 			tempNode = prevNode->NextNode;
-			
+
 		}
 		else
-		{	
+		{
 			tempNode = NULL;
 		}
 	}
 
 
-	
+
 	while(tempNode != NULL)
 	{
 		if(tempNode->ActiveStatus == INACTIVE)
@@ -173,53 +208,59 @@ uint8_t packBeacon(uint8_t *beacon, routeTable *pHead)
 {
 	uint8_t i = 0;
 	routeTable *tempNode;
-	
+
 	tempNode = pHead;
 
 	*(beacon) = 0x06;
 	*(beacon + 1) = NODE_ID;
-	for(i = 2; tempNode != NULL; i+=2)
+	for(i = 2; tempNode != NULL; i+=3)
 	{
 		printf("Not NULL\n\n\r");
 		*(beacon + i) = tempNode->NodeID;
 		*(beacon + i + 1) = tempNode->Count;
+		*(beacon + i + 2) = tempNode->pathSourceID;
 		tempNode = tempNode->NextNode;
 	}
 	return(i);
 }
 
 
-void extractNeighborNodeInfo(uint8_t *rxData, routeTable **pHead)
+void extractNeighborNodeInfo(uint8_t *rxData, routeTable **pHead, uint8_t length)
 {
 
- uint8_t i = 0;
- uint8_t sID = 0;
+	uint8_t i = 0;
+	uint8_t sID = 0;
 
- sID = rxData[1];
- 
- addToTable(pHead, rxData[1], 1, sID);
+	sID = rxData[1];
 
- for(i = 2;i < 4;i+=2)
- {
-	if(rxData[i] != 0 && rxData[i] != NODE_ID)
-	addToTable(pHead, rxData[i], (rxData[i+1]) + 1, sID);
- }
+	addToTable(pHead, rxData[1], 1, 0, sID);
+	
+	printf("Length of extract%d\n\n\r", length);
+
+	for(i = 2; i < length;i+=3)
+	{
+		if(rxData[i] != 0 && rxData[i] != NODE_ID)
+		{
+			printf("Enter Node ID %d\n\n\r", rxData[i]);
+			addToTable(pHead, rxData[i], (rxData[i+1]) + 1, (rxData[i+2]), sID);
+		}
+	}
 
 }
 
 ParserReturnVal_t sendBeacon(int mode)
 {
-  	//uint32_t val;
+	//uint32_t val;
 	uint8_t beaconLen = 0;
-  
-  	if(mode != CMD_INTERACTIVE) return CmdReturnOk;
 
-  	uint8_t beaconPayload[32] = {0};
-  	beaconLen = packBeacon(beaconPayload, pHead);
-	
-	//deleteInActiveNode(pHead);
+	if(mode != CMD_INTERACTIVE) return CmdReturnOk;
+
+	uint8_t beaconPayload[32] = {0};
+	beaconLen = packBeacon(beaconPayload, pHead);
+
+	deleteInActiveNode(pHead);
 	//changeNeighborNodeStatus(pHead);
-	txMode(beaconPayload, beaconLen);  
+	txMode(beaconPayload, beaconLen);
 	return CmdReturnOk;
 
 }
@@ -229,11 +270,11 @@ ADD_CMD("BroadcastBeacon",sendBeacon,"                Broadcast Beacon")
 
 ParserReturnVal_t printRouteTable(int mode)
 {
-  	//uint32_t val;
-  
-  	if(mode != CMD_INTERACTIVE) return CmdReturnOk;
+	//uint32_t val;
+
+	if(mode != CMD_INTERACTIVE) return CmdReturnOk;
 	printTable(pHead);
-	
+
 	return CmdReturnOk;
 
 }
@@ -242,4 +283,4 @@ ADD_CMD("showRouteTable",printRouteTable,"                Print the route table"
 
 
 
-    
+

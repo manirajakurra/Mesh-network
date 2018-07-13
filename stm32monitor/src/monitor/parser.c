@@ -156,6 +156,7 @@ ParserReturnVal_t ParseCmd(char *buf)
 }
 
 #define SEPS " \t\n\v\f\r"
+#define STRING_SEPS "\n\r"
 
 /* Parse the buffer and call commands */ 
 ParserReturnVal_t parse(char *buf, int len, const parse_table *table)
@@ -363,7 +364,7 @@ int fetch_float_arg(float *dest)
 int fetch_string_arg(char **dest)
 {
   char *p;
-  p = strtok(NULL,SEPS);
+  p = strtok(NULL,STRING_SEPS);
   if(p == NULL) {
     /* If we don't get any more tokens it's not an error, just the EOL */
     return -1;
