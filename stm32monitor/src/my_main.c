@@ -18,6 +18,7 @@ uint8_t tFlag = 0;
 uint8_t strLength = 0;
 uint8_t intNodeID = 0;
 volatile uint8_t broadcastFlag;
+uint8_t messageFrom = 0;
 
 TIM_HandleTypeDef tim17;
 TIM_HandleTypeDef htim2;
@@ -25,6 +26,8 @@ TIM_HandleTypeDef htim2;
 //char msg[10] = "ABCDEFGHI";
 uint8_t rxNodeID = 0;
 uint8_t directLink = 0;
+
+uint8_t startBeaconBroadcast = 1;
 
 uint8_t txData1[PAYLOAD_LEN] = {99,98,97,96};
 
@@ -55,6 +58,7 @@ void my_init(void)
 {
 	/* Initialize the terminal system */
 	TerminalInit();
+	static uint8_t configCount = 0;
 
 	/* Check Reset Source */
 	WDTCheckReset();
@@ -65,8 +69,12 @@ void my_init(void)
 	GPIO_Init();
 	spi_init();
 	//configuration of nRF24L01
-	printf("\n\n\n\rConfigured NRF24L01 for dynamic payload\n\n\n\n\r");
-	configforDypd();
+	printf("\n\n\n\rConfigured %d times\n\n\n\n\r",configCount);
+	if(configCount == 0)
+	{
+		configforDypd();
+	}
+	configCount++;
 	config_nrf24l01(Rx);
 	initializeTimer17();
 	initializeTimer2();
@@ -138,7 +146,7 @@ void my_main(void)
 	TaskingRun();  /* Run all registered tasks */
 	my_Loop();
 
-	if(broadcastFlag)
+	if(broadcastFlag && startBeaconBroadcast)
 	{
 
 		broadcastFlag = 0;
@@ -162,16 +170,53 @@ void my_main(void)
 		tFlag = 0;
 		nRetries++;
 		HAL_TIM_Base_Stop_IT(&tim17);
+		
 		if(nRetries < 2)
 		{
 			ackStage = 1;
+			if(!txActive)
+			{
+				TIM17->CNT = 0;
+				HAL_TIM_Base_Start_IT(&tim17);
+			}
 		}
 		else
 		{
-
-			txStage++;
-			if(txStage == 1)
-				ackStage = 1;
+			if(txActive)
+			{
+				if(txStage == 1)
+				{
+					ackStage = 1;
+					txStage++;
+				}
+				else
+				{
+					//reset to receiver mode and abort the transmission
+					//POWER DOWN MODE
+					//spiCmd  = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_CONFIG;
+					//spiData = 0x38;
+					//send_data_to_spi(spiCmd, spiData);
+					config_nrf24l01(Rx);
+					configRxAddress(defaultRxP1Adrs);				
+					configTxAddress(defaultTxAdrs);
+					//request other nodes to start beacon broadcast
+ 					txData[3] = 0;
+					sendControlMsg(txData, 0x00, 0x28);
+					txStage = 0;
+				}
+			}
+			else
+			{
+				//reset to receiver mode and abort the transmission
+				//POWER DOWN MODE
+				//spiCmd  = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_CONFIG;
+				//spiData = 0x38;
+				//send_data_to_spi(spiCmd, spiData);
+				config_nrf24l01(Rx);
+				configRxAddress(defaultRxP1Adrs);				
+				configTxAddress(defaultTxAdrs);
+				intermediateNode = 0;
+			}
 			nRetries = 0;
 			checkNeighbourNode = 0;
 
@@ -191,6 +236,7 @@ void my_main(void)
 	//printf("-----sFlag -----\n\r%d\n\r", sFlag);
 	if(sFlag)
 	{
+		HAL_TIM_Base_Stop_IT(&tim17);		
 		sFlag = 0;
 		//clearFlags();
 		//FIFO_STATUS
@@ -222,7 +268,7 @@ void my_main(void)
 					*(rxdString + i) = (char) *(rxData + i);
 
 				*(rxdString + i) = '\0';
-				printf("Received Message is : %s\n\r\n\r", rxdString);
+				//printf("\n\n\n\rReceived Message is : %s\n\r\n\r", rxdString);
 				// printf("\n\n\r%s\n\n\n\r", rxdString);
 
 				for(i = 0; i < payloadLen; i++)
@@ -231,7 +277,9 @@ void my_main(void)
 				printf("\n\n\r-------Acknowledgment for payload-------\n\n\r");
 				txMode(rxData1, PAYLOAD_LEN);
 				payloadRxdStatus = 0;
-				printf("Received Message is : %s\n\r\n\r", rxdString);
+				printf("Received_message\n\r%s\n\r\n\r", rxdString);
+
+				printf("\n\n\n\rReceived_message_from\n\r%d\n\r\n\r", messageFrom);
 
 			}
 
@@ -256,6 +304,20 @@ void my_main(void)
 
 
 			}
+			else if(rxData[0] == 0x08)
+			{
+				//stop beacon transmission
+				HAL_TIM_Base_Stop_IT(&htim2);
+
+				if(startBeaconBroadcast)
+				{
+					startBeaconBroadcast = 0;
+					//request other nodes to stop beacon broadcast
+ 					txData[3] = 0;
+					sendControlMsg(txData, 0x00, 0x08);
+				}
+
+			}
 			else if((rxData[2] == NODE_ID) || (rxData[2] == 0))
 			{
 				// ackStage = 1;
@@ -263,16 +325,24 @@ void my_main(void)
 				{
 				case 0x01: txData[3] = 0;
 				sendControlMsg(txData, rxData[1], 0x21);
+				messageFrom = rxData[1];
+				
+				//TIM17->CNT = 0;
+				//HAL_TIM_Base_Start_IT(&tim17);
+
 				break;
 				case 0x02: txData[3] = 0;
-
 				sendControlMsg(txData, rxData[1], 0x22);
+				
+				//TIM17->CNT = 0;
+				//HAL_TIM_Base_Start_IT(&tim17);
+
 				break;
 				case 0x03: txData[3] = 0;
 
 				masterNodeID = rxData[1];
 				destNodeID = rxData[3];
-
+				
 				if(destNodeID != NODE_ID)
 				{
 					TIM17->CNT = 0;
@@ -285,6 +355,9 @@ void my_main(void)
 					sendControlMsg(txData, masterNodeID, 0x23);
 					checkNeighbourNode  = 0;
 				}
+				//TIM17->CNT = 0;
+				//HAL_TIM_Base_Start_IT(&tim17);
+
 				break;
 				case 0x04: 
 				configRxAddress(txAdrs);
@@ -294,6 +367,9 @@ void my_main(void)
 				sendControlMsg(txData, rxData[1], 0x24);
 				payloadRxdStatus = 1;
 				configTxAddress(txAdrs);
+				TIM17->CNT = 0;
+				HAL_TIM_Base_Start_IT(&tim17);
+
 				break;
 
 				case 0x05: printf("\n\n\n\n\rEND OF Transmission\n\n\n\r");
@@ -310,6 +386,18 @@ void my_main(void)
 						txData1[i] = payloadRxd[i];
 					intermediateNode = 0;
 				}
+				else
+				{
+					//request other nodes to start beacon broadcast
+ 					txData[3] = 0;
+					sendControlMsg(txData, 0x00, 0x28);
+					//start beacon broadcast
+					HAL_TIM_Base_Start_IT(&htim2);
+					startBeaconBroadcast = 1;	
+				}
+				
+				//TIM17->CNT = 0;
+				//HAL_TIM_Base_Start_IT(&tim17);
 				break;
 
 				case 0x21:
@@ -363,7 +451,17 @@ void my_main(void)
 					txStage = 4;
 					ackStage = 1;
 					break;
-
+				case 0x28:
+					
+					//start beacon broadcast
+					if(!startBeaconBroadcast)
+					{
+						HAL_TIM_Base_Start_IT(&htim2);
+						startBeaconBroadcast = 1;
+						//request other nodes to start beacon broadcast
+ 						txData[3] = 0;
+						sendControlMsg(txData, 0x00, 0x28);
+					}
 				}
 
 			}
@@ -390,17 +488,24 @@ void my_main(void)
 		sendControlMsg(txData, rxNodeID, 0x01);
 		break;
 		case 1: txData[3] = 0;
+		TIM17->CNT = 0;
+		HAL_TIM_Base_Start_IT(&tim17);
 		sendControlMsg(txData, 0x00, 0x02);
 		break;
 		case 2: txData[3] = destNodeID;
+		//TIM17->CNT = 0;
+		//HAL_TIM_Base_Start_IT(&tim17);
 		sendControlMsg(txData, rxNodeID, 0x03);
 		break;
 		case 3: txData[3] = CHANNEL_ADDRESS;
+		//TIM17->CNT = 0;
+		//HAL_TIM_Base_Start_IT(&tim17);
 		sendControlMsg(txData, rxNodeID, 0x04);
 		break;
 		case 4:
 			txMode(txDat, strLength);
-
+			TIM17->CNT = 0;
+			HAL_TIM_Base_Start_IT(&tim17);
 			if(EOT)
 			{
 				configRxAddress(defaultRxP1Adrs);

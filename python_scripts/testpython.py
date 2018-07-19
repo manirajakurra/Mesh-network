@@ -6,7 +6,11 @@ cur = con.cursor()
 ser = serial.Serial("/dev/ttyACM0",115200)
 while 1:
 	if re.match("(.*)(R|r)eceived_message(.*)",ser.readline()):
-       		cur.execute('INSERT INTO message_history VALUES (\''+str(ser.readline())+ '\')');
+		message  = ser.readline()
+        if re.match("(.*)(R|r)eceived_message_from(.*)",ser.readline()):
+		Node_id = ser.readline()
+       		cur.execute('INSERT INTO message_history VALUES (\''+str(message)+ '\',\''+str(Node_id)+ '\', sysdate)');
        		cur.execute('commit');
+		print ("done");
 cur.close()
 con.close()

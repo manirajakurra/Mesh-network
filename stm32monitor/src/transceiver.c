@@ -94,6 +94,7 @@ void txMode(uint8_t *txData, uint8_t pLength)
 ParserReturnVal_t CmdSPIMasterTx(int action)
 {
 	extern  uint8_t txActive;
+	extern uint8_t startBeaconBroadcast;
 	extern uint8_t txData1[PAYLOAD_LEN];
 	uint8_t i = 0;
 	extern uint8_t ackStage;
@@ -106,6 +107,7 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
 	extern uint8_t *txDat;
 	char *inputString;
 	extern uint8_t strLength;
+	uint8_t txData[PAYLOAD_LEN] = {0,0,0,0};
 
 	HAL_StatusTypeDef rc;
 
@@ -153,6 +155,13 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
 	txActive = 1;
 	ackStage = 1;
 	txStage = 0;
+	
+	//stop beacon transmission
+	startBeaconBroadcast = 0;
+	HAL_TIM_Base_Stop_IT(&htim2);
+	//request other nodes to stop beacon broadcast
+ 	txData[3] = 0;
+	sendControlMsg(txData, 0x00, 0x08);
 
 	if(rxNodeID != 0)	
 	{
@@ -167,6 +176,7 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
 	}
 	else
 	{
+		rxNodeID = destNodeID;
 		directLink = 0;
 	}
 	return CmdReturnOk;
