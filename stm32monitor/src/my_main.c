@@ -29,8 +29,6 @@ uint8_t directLink = 0;
 
 uint8_t startBeaconBroadcast = 1;
 
-uint8_t txData1[PAYLOAD_LEN] = {99,98,97,96};
-
 uint8_t rxData1[PAYLOAD_LEN] = {199,198,197,196};
 
 uint8_t defaultTxAdrs[5] = {231,231,231,231,231};
@@ -43,7 +41,6 @@ uint8_t dataAck2RceeiveStatus = 0;
 uint8_t intermediateNode = 0;
 uint8_t checkNeighbourNode = 0;
 uint8_t destNodeID = 0;
-uint8_t payloadRxd[PAYLOAD_LEN] = {0,0,0,0};
 uint8_t *txDat;
 
 uint8_t EOT = 0;//end of transmission flag
@@ -171,7 +168,7 @@ void my_main(void)
 		nRetries++;
 		HAL_TIM_Base_Stop_IT(&tim17);
 		
-		if(nRetries < 2)
+		if(nRetries < 4)
 		{
 			ackStage = 1;
 			if(!txActive)
@@ -191,11 +188,7 @@ void my_main(void)
 				}
 				else
 				{
-					//reset to receiver mode and abort the transmission
-					//POWER DOWN MODE
-					//spiCmd  = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_CONFIG;
-					//spiData = 0x38;
-					//send_data_to_spi(spiCmd, spiData);
+
 					config_nrf24l01(Rx);
 					configRxAddress(defaultRxP1Adrs);				
 					configTxAddress(defaultTxAdrs);
@@ -208,10 +201,6 @@ void my_main(void)
 			else
 			{
 				//reset to receiver mode and abort the transmission
-				//POWER DOWN MODE
-				//spiCmd  = _NRF24L01P_SPI_CMD_WR_REG | _NRF24L01P_REG_CONFIG;
-				//spiData = 0x38;
-				//send_data_to_spi(spiCmd, spiData);
 				config_nrf24l01(Rx);
 				configRxAddress(defaultRxP1Adrs);				
 				configTxAddress(defaultTxAdrs);
@@ -238,6 +227,7 @@ void my_main(void)
 	{
 		HAL_TIM_Base_Stop_IT(&tim17);		
 		sFlag = 0;
+		nRetries = 0;
 		//clearFlags();
 		//FIFO_STATUS
 		//check if there are more payload
@@ -268,11 +258,16 @@ void my_main(void)
 					*(rxdString + i) = (char) *(rxData + i);
 
 				*(rxdString + i) = '\0';
-				//printf("\n\n\n\rReceived Message is : %s\n\r\n\r", rxdString);
-				// printf("\n\n\r%s\n\n\n\r", rxdString);
-
-				for(i = 0; i < payloadLen; i++)
-					payloadRxd[i] = rxData[i];
+		
+				if(intermediateNode)
+				{
+					txDat = (uint8_t *)malloc(payloadLen);
+					// making a copy of received message to retransmit to the required destination node
+					for(i = 0; i < payloadLen; i++)
+					{
+						*(txDat + i) = *(rxData + i);
+					}
+				}
 
 				printf("\n\n\r-------Acknowledgment for payload-------\n\n\r");
 				txMode(rxData1, PAYLOAD_LEN);
@@ -381,9 +376,7 @@ void my_main(void)
 					txActive = 1;
 					ackStage = 1;
 					txStage = 0;
-					rxNodeID = destNodeID;
-					for(i = 0; i < PAYLOAD_LEN; i++)
-						txData1[i] = payloadRxd[i];
+					rxNodeID = destNodeID;				
 					intermediateNode = 0;
 				}
 				else

@@ -95,7 +95,6 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
 {
 	extern  uint8_t txActive;
 	extern uint8_t startBeaconBroadcast;
-	extern uint8_t txData1[PAYLOAD_LEN];
 	uint8_t i = 0;
 	extern uint8_t ackStage;
 	uint32_t nodeID = 0;
@@ -145,9 +144,6 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
 	spiCmd = _NRF24L01P_SPI_CMD_RD_REG |_NRF24L01P_REG_TX_ADDR;
 	printf("\n\n\n\r P1 PIPE TX   ADress\n\n\r");
 	readpipeAdress(spiCmd);
-
-	for(i = 0; i < PAYLOAD_LEN; i++)
-		txData1[i] = 95 + i;
 
 	destNodeID = rxNodeID;
 	EOT = 0;

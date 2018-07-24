@@ -99,7 +99,7 @@ void initializeTimer2()
 
 void startToBroadcastInfo()
 {
-	timerDelay = 30000;
+	timerDelay = 45000;
 	HAL_TIM_Base_Start_IT(&htim2);
 	broadcastFlag = 0;
 }
