@@ -7,19 +7,10 @@ extern TIM_HandleTypeDef htim2;
 extern routeTable *pHead; 
 extern uint8_t directLink;
 
-uint8_t RxMode()
-{
-	uint8_t spiCmd = 0;
-	uint8_t spiData = 0;
-
-	spiCmd = _NRF24L01P_SPI_CMD_RD_RX_PAYLOAD;
-	spiData = 0;
-	spiData = receive_data_from_spi(spiCmd, spiData);
-
-	return(spiData);
-}
-
-
+// Function name : sendControlMsg
+// Description   : Function will send control messages to the receiver.
+// Parameters    : data,rxID,reqID
+// Returns       : Nothing 
 void sendControlMsg(uint8_t *data, uint8_t rxID, uint8_t reqID)
 {
 	uint8_t spiCmd = 0;
@@ -58,6 +49,11 @@ void sendControlMsg(uint8_t *data, uint8_t rxID, uint8_t reqID)
 	SET_CE;
 }
 
+// Function name : txMode
+// Description   : function is to transmit payload to the receiver. 
+// Parameters    : txData,pLength
+// Returns       : Nothing 
+
 void txMode(uint8_t *txData, uint8_t pLength)
 {
 
@@ -91,6 +87,11 @@ void txMode(uint8_t *txData, uint8_t pLength)
 
 }
 
+
+// Function name : CmdSPIMasterTx
+// Description   : function will receive the message and node number from user, then it send the data to the requried node 
+// Parameters    : action
+// Returns       : Nothing 
 ParserReturnVal_t CmdSPIMasterTx(int action)
 {
 	extern  uint8_t txActive;
@@ -112,8 +113,8 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
 
 	if(action==CMD_SHORT_HELP) return CmdReturnOk;
 
-	rc = fetch_uint32_arg(&nodeID);
-	fetch_string_arg(&inputString);
+	rc = fetch_uint32_arg(&nodeID);     // fetch node ID
+	fetch_string_arg(&inputString);     // fetch message from user
 	strLength= strlen(inputString);
 	txDat = (uint8_t *)malloc(strLength);
 	for (i = 0;i < strLength; i++) 
@@ -179,39 +180,5 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
 }
 
 ADD_CMD("SPI_MASTER_TX",CmdSPIMasterTx,"This is used for transmitting--Master Node")
-
-
-ParserReturnVal_t CmdSPIMasterRx(int action)
-{
-	if(action==CMD_SHORT_HELP) return CmdReturnOk;
-
-	RxMode();
-
-	return CmdReturnOk;
-}
-
-ADD_CMD("SPI_MASTER_RX",CmdSPIMasterRx,"This is used for Receiving--Slave Node")
-
-
-ParserReturnVal_t CmdTestTimer2(int action)
-{
-	HAL_StatusTypeDef rc;
-	if(action==CMD_SHORT_HELP) return CmdReturnOk;
-
-	rc = fetch_uint32_arg(&timerDelay);
-	if(rc)
-	{
-		printf("\n\n\rEnter Node ID of the receiver\n\r");
-		return 0;
-	}
-
-	initializeTimer2();
-	HAL_TIM_Base_Stop_IT(&htim2);
-	HAL_TIM_Base_Start_IT(&htim2);
-
-	return CmdReturnOk;
-}
-
-ADD_CMD("timer2",CmdTestTimer2,"Test the working of timer2")
 
 

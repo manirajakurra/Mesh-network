@@ -44,6 +44,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 
 }
+/*   FUNCTION      : initializeTimer17
+ *   DESCRIPTION   : Function is to intialize timer 17
+ *    PARAMETERS   : Nothing
+ *    RETURN       : none
+ */
 
 
 void initializeTimer17()
@@ -62,6 +67,11 @@ void initializeTimer17()
 	HAL_NVIC_EnableIRQ(TIM17_IRQn);
 }
 
+/*   FUNCTION      : initializeTimer2
+ *   DESCRIPTION   : Function is to intializeTimer timer 2
+ *    PARAMETERS   : Nothing
+ *    RETURN       : none
+ */
 
 void initializeTimer2()
 {
@@ -95,7 +105,11 @@ void initializeTimer2()
 	HAL_NVIC_EnableIRQ(TIM2_IRQn);
 }
 
-
+/*   FUNCTION      : startToBroadcastInfo
+ *   DESCRIPTION   : function trigger to boardcast for every 45 seconds
+ *    PARAMETERS   : Nothing
+ *    RETURN       : none
+ */
 
 void startToBroadcastInfo()
 {

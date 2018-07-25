@@ -5,6 +5,11 @@
 
 SPI_HandleTypeDef SpiHandle;
 
+// Function name : configforDypd
+// Description   : This fucntion is to configure NRF24L01 for dynamic payload
+// Parameters    : Nothing
+// Returns       : Nothing
+
 void configforDypd()
 
 {
@@ -30,6 +35,11 @@ void configforDypd()
 	spiData = 0x07; //00000111;
 	send_data_to_spi(spiCmd, spiData);
 }
+
+// Function name : GPIO_Init
+// Description   : This function configure all the gpio pins
+// Parameters    : Nothing
+// Returns       : Nothing
 
 void GPIO_Init(void)
 {
@@ -87,6 +97,11 @@ void GPIO_Init(void)
 
 }
 
+// Function name : spi_init
+// Description   : This fucntion is to intialize SPI 3
+// Parameters    : Nothing
+// Returns       : Nothing
+
 void spi_init(void)
 {
 	GPIO_Init();
@@ -116,6 +131,11 @@ void spi_init(void)
 	}
 }
 
+// Function name : send_payload_to_spi
+// Description   : This fucntion is to send payload to nrf module through spi
+// Parameters    : payload, payloadlen
+// Returns       : Nothing
+
 void send_payload_to_spi(uint8_t * payload, uint8_t payloadLen)
 {
 	uint8_t i = 0;
@@ -137,6 +157,12 @@ void send_payload_to_spi(uint8_t * payload, uint8_t payloadLen)
 	SET_CSN;
 }
 
+// Function name : send_data_to_spi
+// Description   : This fucntion is to send data to configure nrf module.
+// Parameters    : spiCMD, spidata
+// Returns       : Nothing
+
+
 void send_data_to_spi(uint8_t spiCmd,uint8_t spiData)
 {
 	//RESET_CE;
@@ -152,7 +178,10 @@ void send_data_to_spi(uint8_t spiCmd,uint8_t spiData)
 	SET_CSN;
 	//RESET_CE;
 }
-
+// Function name : receive_data_from_spi
+// Description   : This fucntion is to receive data from nrf Module 
+// Parameters    : spiCMD, spidata
+// Returns       : spidata, returns data from spi
 
 uint8_t receive_data_from_spi(uint8_t spiCmd, uint8_t spiData)
 {
@@ -179,7 +208,10 @@ uint8_t receive_data_from_spi(uint8_t spiCmd, uint8_t spiData)
 	SET_CSN;
 	return spiData;
 }
-
+// Function name : receive_payload_from_spi
+// Description   : This fucntion is to receive payload from nrf Module.
+// Parameters    : payload, payloadLen
+// Returns       : payloadLen, returns payloadlength 
 
 uint8_t receive_payload_from_spi(uint8_t * payload, uint8_t payloadLen)
 {
@@ -218,6 +250,11 @@ uint8_t receive_payload_from_spi(uint8_t * payload, uint8_t payloadLen)
 
 	return(payloadLen);
 }
+
+// Function name : config_nrf24l01
+// Description   : This fucntion is to configure nrf Module 
+// Parameters    : mode (Transmiter or Receiver) 
+// Returns       : nothing 
 
 void config_nrf24l01(uint8_t Mode)
 {
@@ -345,7 +382,10 @@ void config_nrf24l01(uint8_t Mode)
 
 }
 
-
+// Function name : configRxAddress
+// Description   : This fucntion is to configure receiver pipe address.
+// Parameters    : Adrs
+// Returns       : nothing 
 void configRxAddress(uint8_t * Adrs)
 {
 	uint8_t i = 0;
@@ -367,7 +407,10 @@ void configRxAddress(uint8_t * Adrs)
 	SET_CSN;
 }
 
-
+// Function name : configTxAddress
+// Description   : This fucntion is to configure transmiter pipe address. 
+// Parameters    : Adrs
+// Returns       : nothing 
 
 
 void configTxAddress(uint8_t * Adrs)
@@ -391,7 +434,10 @@ void configTxAddress(uint8_t * Adrs)
 	SET_CSN;
 }
 
-
+// Function name : readpipeAdress
+// Description   : This fucntion is to read the pipe address
+// Parameters    : spiCmd
+// Returns       : nothing 
 void readpipeAdress(uint8_t spiCmd)
 {
 	// uint8_t spiCmd = 0;

@@ -13,6 +13,11 @@
 extern routeTable *pHead;
 extern routeTable *newNode;
 
+
+// Function name : addToTable
+// Description   : function will add the neighbour node details to the route table.
+// Parameters    : routeTable **pHead, uint8_t NodeID, uint8_t Count, uint8_t pSourceID,uint8_t sourceID
+// Returns       : nothing 
 void addToTable(routeTable **pHead, uint8_t NodeID, uint8_t Count, uint8_t pSourceID,uint8_t sourceID)
 {
 	uint8_t nodeAlreadyPresent = 0;
@@ -86,7 +91,10 @@ void addToTable(routeTable **pHead, uint8_t NodeID, uint8_t Count, uint8_t pSour
 
 }
 
-
+// Function name : printTable
+// Description   : Function to print the route table details.
+// Parameters    : *pHead
+// Returns       : nothing 
 void printTable(routeTable *pHead)
 {
 
@@ -115,6 +123,11 @@ void printTable(routeTable *pHead)
 	}
 }
 
+
+// Function name : changeNeighborNodeStatus
+// Description   : Function update the status(active or inactive) of neighbor nodes.
+// Parameters    : routeTable *pHead
+// Returns       : nothing
 void changeNeighborNodeStatus(routeTable *pHead)
 {
 
@@ -128,6 +141,11 @@ void changeNeighborNodeStatus(routeTable *pHead)
 
 }
 
+
+// Function name : searchNodeInTable
+// Description   : function is to search node in routing table. 
+// Parameters    : routeTable *pHead, uint8_t ID)
+// Returns       : searchStatus
 uint8_t searchNodeInTable(routeTable *pHead, uint8_t ID)
 {
 	routeTable *tempNode;
@@ -151,6 +169,10 @@ uint8_t searchNodeInTable(routeTable *pHead, uint8_t ID)
 }
 
 
+// Function name : deleteInActiveNode
+// Description   : function is to delete inactive node from table.
+// Parameters    : *pHead
+// Returns       : searchStatus
 void deleteInActiveNode(routeTable *pHead)
 {
 	routeTable *tempNode;
@@ -203,7 +225,10 @@ void deleteInActiveNode(routeTable *pHead)
 	}
 }
 
-
+// Function name : packBeacon
+// Description   : function to pack the set of data to transmit. 
+// Parameters    : beacon,*pHead
+// Returns       : i
 uint8_t packBeacon(uint8_t *beacon, routeTable *pHead)
 {
 	uint8_t i = 0;
@@ -224,7 +249,10 @@ uint8_t packBeacon(uint8_t *beacon, routeTable *pHead)
 	return(i);
 }
 
-
+// Function name : extractNeighborNodeInfo
+// Description   : function to get the data from the neighbor nodes.
+// Parameters    : rxData,**pHead,length
+// Returns       : Nothing
 void extractNeighborNodeInfo(uint8_t *rxData, routeTable **pHead, uint8_t length)
 {
 
@@ -248,26 +276,11 @@ void extractNeighborNodeInfo(uint8_t *rxData, routeTable **pHead, uint8_t length
 
 }
 
-ParserReturnVal_t sendBeacon(int mode)
-{
-	//uint32_t val;
-	uint8_t beaconLen = 0;
 
-	if(mode != CMD_INTERACTIVE) return CmdReturnOk;
-
-	uint8_t beaconPayload[32] = {0};
-	beaconLen = packBeacon(beaconPayload, pHead);
-
-	deleteInActiveNode(pHead);
-	//changeNeighborNodeStatus(pHead);
-	txMode(beaconPayload, beaconLen);
-	return CmdReturnOk;
-
-}
-
-ADD_CMD("BroadcastBeacon",sendBeacon,"                Broadcast Beacon")
-
-
+// Function name : printRouteTable
+// Description   : Parser to print the routing table.
+// Parameters    : int mode
+// Returns       : CmdReturnOk
 ParserReturnVal_t printRouteTable(int mode)
 {
 	//uint32_t val;

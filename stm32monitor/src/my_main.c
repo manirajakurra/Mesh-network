@@ -11,27 +11,27 @@
 
 #define CHANNEL_ADDRESS 0xD3
 
-uint8_t sFlag = 0;
-uint8_t txActive = 0;
-uint8_t txStage = 0;
-uint8_t tFlag = 0;
-uint8_t strLength = 0;
-uint8_t intNodeID = 0;
+uint8_t sFlag = 0;       // status flag of reception or transmission
+uint8_t txActive = 0;    // transmission active 
+uint8_t txStage = 0;    // transmission stage
+uint8_t tFlag = 0;      // time out flag
+uint8_t strLength = 0;   
+uint8_t intNodeID = 0;  // Node ID 
 volatile uint8_t broadcastFlag;
 uint8_t messageFrom = 0;
 
 TIM_HandleTypeDef tim17;
 TIM_HandleTypeDef htim2;
 
-//char msg[10] = "ABCDEFGHI";
-uint8_t rxNodeID = 0;
+
+uint8_t rxNodeID = 0;    // reception node id
 uint8_t directLink = 0;
 
 uint8_t startBeaconBroadcast = 1;
 
-uint8_t rxData1[PAYLOAD_LEN] = {199,198,197,196};
+uint8_t rxData1[PAYLOAD_LEN] = {199,198,197,196}; // payload length 
 
-uint8_t defaultTxAdrs[5] = {231,231,231,231,231};
+uint8_t defaultTxAdrs[5] = {231,231,231,231,231}; 
 uint8_t defaultRxP1Adrs[5] = {194,194,194,194,194};
 
 uint8_t ackStage = 1;
@@ -40,7 +40,7 @@ uint8_t payloadRxdStatus = 0;
 uint8_t dataAck2RceeiveStatus = 0;
 uint8_t intermediateNode = 0;
 uint8_t destNodeID = 0;
-uint8_t *txDat;
+uint8_t *txDat;          // input from user 
 
 uint8_t EOT = 0;//end of transmission flag
 
@@ -83,6 +83,11 @@ void my_init(void)
 }
 
 
+// Function name : HAL_GPIO_EXTI_Callback 
+// Description   : Interrupt Service routine for nrf IRQ
+// Parameters    : GPIO_Pin
+// Returns       : Nothing
+
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	//extern uint8_t sFlag;
@@ -94,6 +99,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 }
 
+
+// Function name : clearFlags 
+// Description   : This function flush data in the TX fifo and Rx fifo
+// Parameters    : nothing 
+// Returns       : Nothing
 void clearFlags()
 {
 	uint8_t spiCmd = 0;
@@ -507,39 +517,4 @@ void my_main(void)
 
 	WDTFeed();
 }
-
-ParserReturnVal_t CmdLed(int mode)
-{
-	uint32_t val,rc;
-
-	if(mode != CMD_INTERACTIVE) return CmdReturnOk;
-
-	rc = fetch_uint32_arg(&val);
-	if(rc) {
-		printf("Please supply 1 | 0 to turn on or off the LED\n");
-		return CmdReturnBadParameter1;
-	}
-
-	val = val ? 1 : 0;
-	HAL_GPIO_WritePin(LD2_GPIO_Port,LD2_Pin,val);
-
-	return CmdReturnOk;
-}
-
-ADD_CMD("led",CmdLed,"0 | 1           Control LED")
-
-ParserReturnVal_t CmdButton(int mode)
-{
-	uint32_t val;
-
-	if(mode != CMD_INTERACTIVE) return CmdReturnOk;
-
-	val = HAL_GPIO_ReadPin(B1_GPIO_Port,B1_Pin);
-
-	printf("Button is %s\n",val ? "released" : "pressed");
-
-	return CmdReturnOk;
-}
-
-ADD_CMD("button",CmdButton,"                Read Button")
 

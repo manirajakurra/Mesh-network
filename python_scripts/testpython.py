@@ -12,9 +12,9 @@ while 1:
 			Node_id = ser.readline()
                         print (Node_id)
        			cur.execute('INSERT INTO message_history VALUES (\''+str(message)+ '\',\''+str(Node_id)+ '\', sysdate)');
+                        cur.execute('commit');
 			del message
                 	del Node_id
-       		cur.execute('commit');
 		print ("done")
 cur.close()
 con.close()
