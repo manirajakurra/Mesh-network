@@ -7,10 +7,14 @@ ser = serial.Serial("/dev/ttyACM0",115200)
 while 1:
 	if re.match("(.*)(R|r)eceived_message(.*)",ser.readline()):
 		message  = ser.readline()
-        if re.match("(.*)(R|r)eceived_message_from(.*)",ser.readline()):
-		Node_id = ser.readline()
-       		cur.execute('INSERT INTO message_history VALUES (\''+str(message)+ '\',\''+str(Node_id)+ '\', sysdate)');
+                print (message)
+                if re.match("(.*)(R|r)eceived_message_from(.*)",ser.readline()):
+			Node_id = ser.readline()
+                        print (Node_id)
+       			cur.execute('INSERT INTO message_history VALUES (\''+str(message)+ '\',\''+str(Node_id)+ '\', sysdate)');
+			del message
+                	del Node_id
        		cur.execute('commit');
-		print ("done");
+		print ("done")
 cur.close()
 con.close()
