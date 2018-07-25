@@ -39,7 +39,6 @@ uint8_t ackStage = 1;
 uint8_t payloadRxdStatus = 0;
 uint8_t dataAck2RceeiveStatus = 0;
 uint8_t intermediateNode = 0;
-uint8_t checkNeighbourNode = 0;
 uint8_t destNodeID = 0;
 uint8_t *txDat;
 
@@ -207,17 +206,7 @@ void my_main(void)
 				intermediateNode = 0;
 			}
 			nRetries = 0;
-			checkNeighbourNode = 0;
-
-		}
-
-		// to resend when the message received is not correct format
-		if(checkNeighbourNode)
-		{
-
-			TIM17->CNT = 0;
-			HAL_TIM_Base_Start_IT(&tim17);
-			sendControlMsg(txData, destNodeID, 0x01);
+			//intermediateNode = 0;
 		}
 
 	}
@@ -261,6 +250,7 @@ void my_main(void)
 		
 				if(intermediateNode)
 				{
+					strLength = payloadLen;
 					txDat = (uint8_t *)malloc(payloadLen);
 					// making a copy of received message to retransmit to the required destination node
 					for(i = 0; i < payloadLen; i++)
@@ -342,13 +332,17 @@ void my_main(void)
 				{
 					TIM17->CNT = 0;
 					HAL_TIM_Base_Start_IT(&tim17);
-					sendControlMsg(txData, destNodeID, 0x01);
-					checkNeighbourNode  = 1;
+
+					//sendControlMsg(txData, destNodeID, 0x01);
+					printf("\n\n\n\r This is an intermediate node\n\n\n\r");
+					txData[3] = 0;
+					sendControlMsg(txData, masterNodeID, 0x23);
+					intermediateNode  = 1;
 				}
 				else
 				{
 					sendControlMsg(txData, masterNodeID, 0x23);
-					checkNeighbourNode  = 0;
+					intermediateNode  = 0;
 				}
 				//TIM17->CNT = 0;
 				//HAL_TIM_Base_Start_IT(&tim17);
@@ -396,8 +390,6 @@ void my_main(void)
 				case 0x21:
 					HAL_TIM_Base_Stop_IT(&tim17);
 
-					if(!checkNeighbourNode)
-					{
 						txActive = 1;
 						txStage = 3;
 						ackStage = 1;
@@ -407,15 +399,7 @@ void my_main(void)
 							txStage = 2;
 							ackStage = 1;
 						}
-					}
-					else
-					{
-						intermediateNode = 1;
-						checkNeighbourNode = 0;
-						printf("\n\n\n\r This is an intermediate node\n\n\n\r");
-						txData[3] = 0;
-						sendControlMsg(txData, masterNodeID, 0x23);
-					}
+					
 					break;
 				case 0x22:
 					HAL_TIM_Base_Stop_IT(&tim17);
