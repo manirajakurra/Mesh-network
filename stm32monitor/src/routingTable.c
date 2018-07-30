@@ -12,7 +12,7 @@
 
 extern routeTable *pHead;
 extern routeTable *newNode;
-
+extern uint8_t motionDetect;
 
 // Function name : addToTable
 // Description   : function will add the neighbour node details to the route table.
@@ -23,72 +23,58 @@ void addToTable(routeTable **pHead, uint8_t NodeID, uint8_t Count, uint8_t pSour
 	uint8_t nodeAlreadyPresent = 0;
 	routeTable *tempNode;
 	tempNode = *pHead;
+	tempNode = tempNode->NextNode;
 
-	if(*pHead == NULL)
+	while(tempNode!= NULL)
 	{
-		// allocate memory to new node
-		printf("\n\n\rITS NULL\n\n\n\r");
-		newNode = (routeTable *)malloc(sizeof(routeTable));
-		newNode->NodeID = NodeID;
-		newNode->Count = Count;
-		newNode->pathSourceID = sourceID;
-		newNode->ActiveStatus = ACTIVE;
-		newNode->NextNode = NULL;
-		*pHead = newNode;
-	}
-	else
-	{
-		while(tempNode!= NULL)
+		if(tempNode->NodeID == NodeID)
 		{
-			if(tempNode->NodeID == NodeID)
-			{
-				nodeAlreadyPresent = 1;
+			nodeAlreadyPresent = 1;
 
-				if(tempNode->ActiveStatus == ACTIVE)
+			if(tempNode->ActiveStatus == ACTIVE)
+			{
+				if(tempNode->Count > Count)
 				{
-					if(tempNode->Count > Count)
-					{
-						//least distant path found, update the info
-						tempNode->Count = Count;
-						tempNode->pathSourceID = sourceID;
-						break;
-					}
-					else
-					{
-						//already a least distant path exists no need to update
-						break;
-					}
+					//least distant path found, update the info
+					tempNode->Count = Count;
+					tempNode->pathSourceID = sourceID;
+					break;
 				}
 				else
 				{
-					if(pSourceID != NODE_ID)
-					{
-						tempNode->ActiveStatus = ACTIVE;
-						tempNode->Count = Count;
-						tempNode->pathSourceID = sourceID;
-					}
+					//already a least distant path exists no need to update
 					break;
 				}
 			}
 			else
 			{
-				tempNode = tempNode->NextNode;
-				//nodeAlreadyPresent = 0;
+				if(pSourceID != NODE_ID)
+				{
+					tempNode->ActiveStatus = ACTIVE;
+					tempNode->Count = Count;
+					tempNode->pathSourceID = sourceID;
+				}
+				break;
 			}
 		}
-		if(!nodeAlreadyPresent && (pSourceID != NODE_ID))
+		else
 		{
-			//Enter new node info
-			newNode = (routeTable *)malloc(sizeof(routeTable));
-			newNode->NodeID = NodeID;
-			newNode->Count = Count;
-			newNode->pathSourceID = sourceID;
-			newNode->ActiveStatus = ACTIVE;
-			newNode->NextNode = *pHead;
-			*pHead = newNode;
+			tempNode = tempNode->NextNode;
+			//nodeAlreadyPresent = 0;
 		}
 	}
-
+	if(!nodeAlreadyPresent && (pSourceID != NODE_ID))
+	{
+		//Enter new node info
+		newNode = (routeTable *)malloc(sizeof(routeTable));
+		newNode->NodeID = NodeID;
+		newNode->Count = Count;
+		newNode->pathSourceID = sourceID;
+		newNode->ActiveStatus = ACTIVE;
+		tempNode = *pHead;
+		newNode->NextNode = tempNode->NextNode;
+		tempNode->NextNode = newNode;
+	}
 }
 
 // Function name : printTable
@@ -99,7 +85,7 @@ void printTable(routeTable *pHead)
 {
 
 	routeTable *tempNode;
-	tempNode = pHead;
+	tempNode = pHead->NextNode;
 
 	if(tempNode == NULL)
 	{
@@ -132,7 +118,7 @@ void changeNeighborNodeStatus(routeTable *pHead)
 {
 
 	routeTable *tempNode;
-	tempNode = pHead;
+	tempNode = pHead->NextNode;
 	while(tempNode != NULL)
 	{
 		tempNode->ActiveStatus = INACTIVE;
@@ -150,7 +136,7 @@ uint8_t searchNodeInTable(routeTable *pHead, uint8_t ID)
 {
 	routeTable *tempNode;
 	uint8_t searchStatus = 0;	
-	tempNode = pHead;
+	tempNode = pHead->NextNode;
 
 	while(tempNode != NULL)
 	{
@@ -179,34 +165,7 @@ void deleteInActiveNode(routeTable *pHead)
 	routeTable *prevNode;
 
 	prevNode = pHead;
-
-	if(prevNode != NULL)
-	{
-		tempNode = prevNode->NextNode;
-	}
-	else
-	{
-		tempNode = NULL;
-	}
-
-	while((pHead->ActiveStatus == INACTIVE) && (pHead != NULL))
-	{
-		pHead = pHead->NextNode;
-		free(prevNode);
-		prevNode = pHead;
-
-		if(prevNode->NextNode != NULL)
-		{
-			tempNode = prevNode->NextNode;
-
-		}
-		else
-		{
-			tempNode = NULL;
-		}
-	}
-
-
+	tempNode = prevNode->NextNode;
 
 	while(tempNode != NULL)
 	{
@@ -214,13 +173,12 @@ void deleteInActiveNode(routeTable *pHead)
 		{
 			tempNode = tempNode->NextNode;
 			free(prevNode->NextNode);
-			prevNode->NextNode = NULL;
+			prevNode->NextNode = tempNode;
 		}
 		else
 		{
-			prevNode->NextNode = tempNode;
 			prevNode = tempNode;
-			tempNode = tempNode->NextNode;
+			tempNode = prevNode->NextNode;
 		}
 	}
 }
@@ -234,11 +192,12 @@ uint8_t packBeacon(uint8_t *beacon, routeTable *pHead)
 	uint8_t i = 0;
 	routeTable *tempNode;
 
-	tempNode = pHead;
+	tempNode = pHead->NextNode;
 
 	*(beacon) = 0x06;
 	*(beacon + 1) = NODE_ID;
-	for(i = 2; tempNode != NULL; i+=3)
+	*(beacon + 2) = motionDetect;
+	for(i = 3; tempNode != NULL; i+=3)
 	{
 		printf("Not NULL\n\n\r");
 		*(beacon + i) = tempNode->NodeID;
@@ -261,11 +220,11 @@ void extractNeighborNodeInfo(uint8_t *rxData, routeTable **pHead, uint8_t length
 
 	sID = rxData[1];
 
-	addToTable(pHead, rxData[1], 1, 0, sID);
-	
+	addToTable(pHead, rxData[1], 0, 0, sID);
+	motionDetect = rxData[2];
 	printf("Length of extract%d\n\n\r", length);
 
-	for(i = 2; i < length;i+=3)
+	for(i = 3; i < length;i+=3)
 	{
 		if(rxData[i] != 0 && rxData[i] != NODE_ID)
 		{

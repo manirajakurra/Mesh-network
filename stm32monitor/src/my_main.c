@@ -19,6 +19,7 @@ uint8_t strLength = 0;
 uint8_t intNodeID = 0;  // Node ID 
 volatile uint8_t broadcastFlag;
 uint8_t messageFrom = 0;
+uint8_t motionDetect = 0;
 
 TIM_HandleTypeDef tim17;
 TIM_HandleTypeDef htim2;
@@ -70,6 +71,16 @@ void my_init(void)
 	{
 		configforDypd();
 	}
+
+	newNode = (routeTable *)malloc(sizeof(routeTable));
+	newNode->NodeID = NODE_ID;
+	newNode->Count = 0;
+	newNode->pathSourceID = 0;
+	newNode->ActiveStatus = ACTIVE;
+	newNode->NextNode = NULL;
+	pHead = newNode;
+
+
 	configCount++;
 	config_nrf24l01(Rx);
 	initializeTimer17();
@@ -97,6 +108,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		printf("Rxd Interrupt\n\r");
 		sFlag = 1;
 	}
+
 }
 
 
@@ -152,6 +164,36 @@ void my_main(void)
 	TaskingRun();  /* Run all registered tasks */
 	my_Loop();
 
+	if(SENSOR_CONNECTED)
+	{
+
+		if(motionDetect)
+		{
+			motionDetect = 0;
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
+			HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+		}
+		else
+		{
+			motionDetect = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5);	
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+		}
+	}
+	else
+	{
+		if(motionDetect)
+		{
+			motionDetect = 0;
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
+		}
+		else
+		{
+			motionDetect = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5);	
+			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+		}
+		
+	}
+
 	if(broadcastFlag && startBeaconBroadcast)
 	{
 
@@ -161,11 +203,11 @@ void my_main(void)
 
 		beaconLen = packBeacon(beaconPayload, pHead);
 
-		//deleteInActiveNode(pHead);
+		deleteInActiveNode(pHead);
+		changeNeighborNodeStatus(pHead);
 
 		txMode(beaconPayload, beaconLen);
-		//deleteInActiveNode(pHead);
-		changeNeighborNodeStatus(pHead);
+
 	}
 
 
