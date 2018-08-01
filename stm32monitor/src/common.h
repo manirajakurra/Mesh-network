@@ -15,7 +15,7 @@
 #include "stm32f3xx_hal.h"
 
 #define NODE_ID 0x03
-#define SENSOR_CONNECTED 0x01
+#define SENSOR_CONNECTED 0x00
 
 
 #define TICK_RATE       (1000)

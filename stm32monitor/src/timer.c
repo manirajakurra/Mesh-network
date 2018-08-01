@@ -7,6 +7,8 @@ extern TIM_HandleTypeDef tim17;
 extern TIM_HandleTypeDef htim2;
 extern uint8_t tFlag;
 extern volatile uint8_t broadcastFlag;
+extern uint8_t sendPIRStatus;
+extern uint8_t sendSensorStatus;
 
 static int idelay = 0;
 
@@ -32,6 +34,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	if (htim->Instance==TIM2)
 	{
 		idelay++;
+
+		if(sendPIRStatus && ((idelay % 15000) == 0))
+		{
+			sendSensorStatus = 1;
+		}
 
 		if(idelay == timerDelay)
 		{

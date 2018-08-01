@@ -196,7 +196,10 @@ uint8_t packBeacon(uint8_t *beacon, routeTable *pHead)
 
 	*(beacon) = 0x06;
 	*(beacon + 1) = NODE_ID;
-	*(beacon + 2) = motionDetect;
+
+
+	*(beacon + 2) = 0;
+
 	for(i = 3; tempNode != NULL; i+=3)
 	{
 		printf("Not NULL\n\n\r");
@@ -221,7 +224,7 @@ void extractNeighborNodeInfo(uint8_t *rxData, routeTable **pHead, uint8_t length
 	sID = rxData[1];
 
 	addToTable(pHead, rxData[1], 0, 0, sID);
-	motionDetect = rxData[2];
+
 	printf("Length of extract%d\n\n\r", length);
 
 	for(i = 3; i < length;i+=3)

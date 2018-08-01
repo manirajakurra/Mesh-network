@@ -20,6 +20,8 @@ uint8_t intNodeID = 0;  // Node ID
 volatile uint8_t broadcastFlag;
 uint8_t messageFrom = 0;
 uint8_t motionDetect = 0;
+uint8_t sendPIRStatus = 0;
+uint8_t sendSensorStatus = 0;
 
 TIM_HandleTypeDef tim17;
 TIM_HandleTypeDef htim2;
@@ -144,9 +146,9 @@ void clearFlags()
 void my_main(void)
 {
 	//extern uint8_t sFlag;
-	uint8_t rxData[PAYLOAD_LEN] = {0};
+	uint8_t rxData[PAYLOAD_LEN + 1] = {0};
 	uint8_t fifoStatusRx = 0;
-	static uint8_t txData[PAYLOAD_LEN] = {0,0,0,0};
+	static uint8_t txData[PAYLOAD_LEN + 1] = {0,0,0,0,0};
 	uint8_t txAdrs[5] = {194,194,194,194,211};
 
 	static uint8_t nRetries = 0;
@@ -169,9 +171,7 @@ void my_main(void)
 
 		if(motionDetect)
 		{
-			motionDetect = 0;
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
-			HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 		}
 		else
 		{
@@ -179,25 +179,31 @@ void my_main(void)
 			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
 		}
 	}
-	else
+
+	if(sendSensorStatus && sendPIRStatus)
 	{
+		txData[0] = 0x09;
+		txData[1] = NODE_ID;
+		txData[2] = rxNodeID;
+		txData[4] = NODE_ID;
 		if(motionDetect)
 		{
-			motionDetect = 0;
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
+ 			txData[3] = 1;
 		}
 		else
 		{
-			motionDetect = HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_5);	
-			HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+			txData[3] = 0;
 		}
-		
+		txMode(txData, 5);
+		motionDetect = 0;
+		sendSensorStatus = 0;
 	}
 
 	if(broadcastFlag && startBeaconBroadcast)
 	{
 
 		broadcastFlag = 0;
+
 		HAL_TIM_Base_Start_IT(&htim2);
 		printf("\n\n\n\r******-----------Broadcast Beacon----------********\n\n\n\n\r");
 
@@ -332,7 +338,32 @@ void my_main(void)
 				EOT = 1;
 				dataAck2RceeiveStatus = 0;
 			}
+			//sensor info
+			if(rxData[0] == 0x09)
+			{
+				if(rxData[4] != NODE_ID)
+				{
+					if(rxData[3])
+					{
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_SET);
+					}
+					else
+					{
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+					}
 
+					if(rxData[2] != NODE_ID)
+					{
+						txData[0] = 0x09;
+						txData[1] = NODE_ID;
+						txData[2] = rxNodeID;
+						txData[3] = rxData[3];
+						txData[4] = rxData[4];
+						txMode(txData, 5);
+					}
+				}
+		
+			}
 			if(rxData[0] == 0x06)
 			{
 

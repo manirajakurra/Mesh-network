@@ -6,6 +6,7 @@ extern TIM_HandleTypeDef tim17;
 extern TIM_HandleTypeDef htim2;
 extern routeTable *pHead; 
 extern uint8_t directLink;
+extern uint8_t sendPIRStatus;
 
 // Function name : sendControlMsg
 // Description   : Function will send control messages to the receiver.
@@ -181,4 +182,55 @@ ParserReturnVal_t CmdSPIMasterTx(int action)
 
 ADD_CMD("SPI_MASTER_TX",CmdSPIMasterTx,"This is used for transmitting--Master Node")
 
+// Function name : CmdSendPIRValue
+// Description   : function will send PIR value to neighbour node
+// Parameters    : action
+// Returns       : Nothing 
+ParserReturnVal_t CmdSendPIRValue(int action)
+{
+	extern  uint8_t rxNodeID;
+	uint32_t nodeID = 0;
+	HAL_StatusTypeDef rc;
+	if(action==CMD_SHORT_HELP) return CmdReturnOk;
 
+	rc = fetch_uint32_arg(&nodeID);     // fetch node ID
+	if(rc)
+	{
+		printf("\n\n\rEnter Node ID of the receiver\n\r");
+		return 0;
+	}
+
+	if(SENSOR_CONNECTED)
+	{
+		rxNodeID = (uint8_t) nodeID;
+		//start to send PIR value
+		sendPIRStatus = 1;
+	}
+	else
+	{
+		printf("\n\n\r Sensor not connected \n\n\r");
+	}
+
+	return CmdReturnOk;
+}
+
+ADD_CMD("send_pir_value",CmdSendPIRValue,"This is used for transmitting--Master Node")
+
+
+// Function name : CmdSendPIRValue
+// Description   : function will stop transmission of PIR value to neighbour node
+// Parameters    : action
+// Returns       : Nothing 
+ParserReturnVal_t CmdStopPIRValueTransmission(int action)
+{
+	extern  uint8_t rxNodeID;
+	if(action==CMD_SHORT_HELP) return CmdReturnOk;
+
+	rxNodeID = 0;
+	//start to send PIR value
+	sendPIRStatus = 0;
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_4, GPIO_PIN_RESET);
+	return CmdReturnOk;
+}
+
+ADD_CMD("stop_pir_value",CmdStopPIRValueTransmission,"This is used for transmitting--Master Node")
