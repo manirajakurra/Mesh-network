@@ -94,13 +94,14 @@ void printTable(routeTable *pHead)
 	else
 	{
 		printf("\n\n\r--------------------Items in Routing Table are-------------------\n\n\n\r");
+		printf("Node ID\tNo. of hops\tIntermediate Node\tNode Status\n\n\r");
 
 		while (tempNode != NULL)
 		{
-
-			printf("%d  ",tempNode->NodeID);
-			printf("%d  ",tempNode->Count);
-			printf("%d  ",tempNode->pathSourceID);
+			
+			printf("%d  \t",tempNode->NodeID);
+			printf("%d  \t\t",tempNode->Count);
+			printf("%d  \t\t\t",tempNode->pathSourceID);
 			printf("%d  \n\r",tempNode->ActiveStatus);
 			tempNode = tempNode->NextNode;
 

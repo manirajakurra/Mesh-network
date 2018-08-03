@@ -8,13 +8,13 @@ while 1:
 	if re.match("(.*)(R|r)eceived_message(.*)",ser.readline()):
 		message  = ser.readline()
                 print (message)
-                if re.match("(.*)(R|r)eceived_message_from(.*)",ser.readline()):
-			Node_id = ser.readline()
-                        print (Node_id)
-       			cur.execute('INSERT INTO message_history VALUES (\''+str(message)+ '\',\''+str(Node_id)+ '\', sysdate)');
-                        cur.execute('commit');
-			del message
-                	del Node_id
+        if re.match("(.*)(R|r)eceived_message_from(.*)",ser.readline()):
+		Node_id = ser.readline()
+       		cur.execute('INSERT INTO message_history VALUES (\''+str(message)+ '\',\''+str(Node_id)+ '\', sysdate)');
+                cur.execute('commit');
+                print (Node_id)
+		del message
+		del Node_id
 		print ("done")
 cur.close()
 con.close()
